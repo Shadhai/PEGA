@@ -1,0 +1,55 @@
+{
+  "source": "NASA-SP-2016-6105 Rev2 Systems Engineering Handbook + NASA-STD-3001",
+  "margins": [
+    {
+      "parameter": "structural_yield",
+      "factor_of_safety": 1.25,
+      "applies_to": "robotic arm links"
+    },
+    {
+      "parameter": "structural_ultimate",
+      "factor_of_safety": 1.4,
+      "applies_to": "critical load paths"
+    },
+    {
+      "parameter": "thermal_operating",
+      "margin_c": 10,
+      "applies_to": "electronics"
+    },
+    {
+      "parameter": "thermal_survival",
+      "margin_c": 20,
+      "applies_to": "all hardware"
+    },
+    {
+      "parameter": "collision_avoidance",
+      "min_distance_m": 0.5,
+      "applies_to": "fragile surfaces"
+    },
+    {
+      "parameter": "collision_avoidance_standard",
+      "min_distance_m": 0.3,
+      "applies_to": "non-fragile surfaces"
+    },
+    {
+      "parameter": "force_application",
+      "max_percent_of_limit": 80,
+      "applies_to": "robotic end effectors"
+    },
+    {
+      "parameter": "velocity_operational",
+      "max_percent_of_limit": 85,
+      "applies_to": "all joints"
+    },
+    {
+      "parameter": "communication_latency",
+      "max_acceptable_s": 2.0,
+      "applies_to": "teleoperation"
+    },
+    {
+      "parameter": "recovery_attempts",
+      "max_before_abort": 3,
+      "applies_to": "autonomous operations"
+    }
+  ]
+}

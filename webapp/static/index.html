@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Plan-Agnostic Graph-Grounded Action Assurance for Embodied Agents">
+  <meta name="theme-color" content="#04060a">
+  <title>PAGA — Assurance Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E◈%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="brand">
+    <div class="brand-icon" aria-hidden="true">◈</div>
+    <div class="brand-text">
+      <h1>PAGA</h1>
+      <p class="subtitle">Graph-Grounded Action Assurance</p>
+    </div>
+  </div>
+
+  <div class="top-bar-actions">
+    <span class="live-badge" title="Dashboard automatically refreshes">
+      <span class="live-dot" aria-hidden="true"></span>
+      LIVE
+    </span>
+
+    <button id="explainBtn" class="btn btn-ghost" type="button" aria-haspopup="dialog">
+      <span aria-hidden="true">📘</span> About
+    </button>
+
+    <nav class="nav-links" aria-label="Primary navigation">
+      <a class="nav-link" href="/static/home.html">Home</a>
+      <a class="nav-link active" href="/static/index.html" aria-current="page">Dashboard</a>
+      <a class="nav-link" href="/static/systems.html">Systems</a>
+    </nav>
+
+    <button id="themeToggle" class="btn btn-primary" type="button">🌙 Dark</button>
+  </div>
+</header>
+
+<div id="container">
+
+  <main id="globe-container" aria-label="Embodied-agent mission visualization">
+    <div class="globe-hud">
+      <span class="globe-hint">Drag to rotate · Scroll to zoom · Hover markers for details</span>
+    </div>
+  </main>
+
+  <aside id="sidebar" aria-label="Constraint assurance controls and metrics">
+
+    <section class="panel fade-in" style="animation-delay:0.05s">
+      <div class="section-header">
+        <h2 class="section-title">Assurance Metrics</h2>
+        <span class="section-badge" id="benchmark-ts">—</span>
+      </div>
+
+      <div class="data-indicator" id="data-indicator">
+        <span id="obstacle-count">— obstacles</span> · <span id="joint-count">— joints</span> loaded from graph
+      </div>
+
+      <div class="stats-grid" id="stats">
+        <div class="skeleton stat-skeleton" aria-hidden="true"></div>
+        <div class="skeleton stat-skeleton" aria-hidden="true"></div>
+        <div class="skeleton stat-skeleton" aria-hidden="true"></div>
+        <div class="skeleton stat-skeleton" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="panel fade-in" style="animation-delay:0.10s">
+      <div class="section-header">
+        <h2 class="section-title">Experience Memory</h2>
+        <span class="section-badge">VECTOR STORE</span>
+      </div>
+      <div id="memory-stats" class="memory-grid">
+        <div class="skeleton memory-skeleton" aria-hidden="true"></div>
+        <div class="skeleton memory-skeleton" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="panel fade-in" style="animation-delay:0.12s">
+      <div class="section-header">
+        <h2 class="section-title">Live Pipeline Trigger</h2>
+        <span class="section-badge" id="live-test-status">IDLE</span>
+      </div>
+
+      <form class="live-test-form" id="liveTestForm">
+        <input type="text" id="liveCommand" class="field-input" placeholder="e.g. repair thermal shield panel 3"
+               autocomplete="off" spellcheck="false" aria-label="Autonomous command">
+        <button id="runLiveBtn" class="btn btn-primary" type="submit">Execute</button>
+      </form>
+
+      <div id="liveResult" class="live-result" aria-live="polite"></div>
+    </section>
+
+    <section class="panel fade-in" style="animation-delay:0.15s">
+      <div class="section-header">
+        <h2 class="section-title">Benchmark Results</h2>
+        <span class="section-badge">VALIDATION</span>
+      </div>
+      <div id="task-table" class="table-wrap">
+        <div class="skeleton table-skeleton" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="panel fade-in" style="animation-delay:0.20s">
+      <div class="section-header">
+        <h2 class="section-title">Evidence Trail</h2>
+        <span class="section-badge">AUDIT LOG</span>
+      </div>
+
+      <div class="evidence-controls">
+        <input type="text" id="evidenceSearch" class="field-input" placeholder="Search command…"
+               autocomplete="off" spellcheck="false" aria-label="Search evidence">
+        <select id="evidenceTaskFilter" class="field-select" aria-label="Filter evidence by task">
+          <option value="">All tasks</option>
+          <option value="repair">Repair</option>
+          <option value="inspect">Inspect</option>
+          <option value="sample">Sample</option>
+          <option value="tool_change">Tool change</option>
+          <option value="leak_check">Leak check</option>
+        </select>
+        <button id="applyFilterBtn" class="btn btn-ghost" type="button">Filter</button>
+      </div>
+
+      <div id="evidence-panel" class="timeline-wrap" aria-live="polite">
+        <div class="skeleton timeline-skeleton" aria-hidden="true"></div>
+      </div>
+    </section>
+
+  </aside>
+</div>
+
+<div id="explainModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">About PAGA</h2>
+      <button class="close btn btn-ghost" type="button" aria-label="Close" data-close-modal>&times;</button>
+    </div>
+    <div class="modal-body" id="explainContent"></div>
+    <div style="padding:0 22px 22px;">
+      <a href="/static/systems.html" class="btn btn-primary">View full system architecture →</a>
+    </div>
+  </div>
+</div>
+
+<div id="testDetailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="testDetailTitle" aria-hidden="true">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="testDetailTitle">Test Run Details</h2>
+      <button class="close btn btn-ghost" type="button" aria-label="Close" data-close-modal>&times;</button>
+    </div>
+    <div id="testDetailContent" class="modal-body"></div>
+  </div>
+</div>
+
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

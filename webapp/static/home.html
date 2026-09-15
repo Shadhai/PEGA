@@ -1,0 +1,890 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="description"
+    content="Plan-Agnostic Graph-Grounded Action Assurance for Embodied Agents"
+  >
+
+  <meta name="theme-color" content="#04060a">
+
+  <title>
+    PAGA · Plan-Agnostic Graph-Grounded Action Assurance for Embodied Agents
+  </title>
+
+  <link
+    rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>"
+  >
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+  <!-- =========================================================
+       HEADER
+       ========================================================= -->
+
+  <header class="top-bar">
+
+    <div class="brand">
+
+      <div
+        class="brand-icon"
+        aria-hidden="true"
+      >
+        ◈
+      </div>
+
+      <div class="brand-text">
+
+        <h1>PAGA</h1>
+
+        <p class="subtitle">
+          Graph-Grounded Action Assurance
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="top-bar-actions">
+
+      <nav
+        class="nav-links"
+        aria-label="Primary navigation"
+      >
+
+        <a
+          class="nav-link active"
+          href="/static/home.html"
+          aria-current="page"
+        >
+          Home
+        </a>
+
+        <a
+          class="nav-link"
+          href="/static/index.html"
+        >
+          Dashboard
+        </a>
+
+        <a
+          class="nav-link"
+          href="/static/systems.html"
+        >
+          Systems
+        </a>
+
+      </nav>
+
+
+      <button
+        id="themeToggle"
+        class="btn btn-primary"
+        type="button"
+      >
+        🌙 Dark
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- =========================================================
+       MAIN
+       ========================================================= -->
+
+  <main class="page">
+
+
+    <!-- =======================================================
+         HERO VIDEO
+         ======================================================= -->
+
+    <section
+      class="hero hero-video-section"
+      aria-label="PAGA introduction"
+    >
+
+      <!-- Background video -->
+
+      <video
+        class="hero-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      >
+
+        <source
+          src="/static/videos/rocket.mp4"
+          type="video/mp4"
+        >
+
+        Your browser does not support the video element.
+
+      </video>
+
+
+      <!-- Cinematic overlay -->
+
+      <div
+        class="hero-video-overlay"
+        aria-hidden="true"
+      ></div>
+
+
+      <!-- =====================================================
+           CENTERED HERO CONTENT
+           ===================================================== -->
+
+      <div class="hero-inner hero-centered">
+
+        <p class="hero-eyebrow">
+
+          <span class="live-dot"></span>
+
+          PAGA · ASSURANCE ACTIVE
+
+        </p>
+
+
+        <h1>
+          Stop the agent<br>
+          before physics does.
+        </h1>
+
+
+        <p class="lead">
+
+          A plan-agnostic assurance layer that checks every
+          embodied-agent action against a graph of real joint
+          limits, obstacles and thermal constraints —
+          before it ever reaches hardware.
+
+        </p>
+
+
+        <div class="hero-ctas">
+
+          <a
+            href="/static/index.html"
+            class="btn btn-primary btn-lg"
+          >
+            Open Dashboard
+          </a>
+
+
+          <a
+            href="/static/systems.html"
+            class="btn btn-ghost btn-lg"
+          >
+            View System Architecture
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         MOVING TELEMETRY STRIP
+         DIRECTLY AFTER VIDEO
+         ======================================================= -->
+
+    <div
+      class="telemetry-ticker telemetry-after-hero"
+      aria-label="Live PAGA telemetry"
+    >
+
+      <div class="ticker-track">
+
+        <!-- SET 1 -->
+
+        <span>
+          AGA <b>60.4%</b>
+        </span>
+
+        <span>
+          AVG TRUST <b>82%</b>
+        </span>
+
+        <span>
+          GRAPH DB <b>KÙZUDB</b>
+        </span>
+
+        <span>
+          RECOVERY <b>≤ 3 RETRIES</b>
+        </span>
+
+        <span>
+          VRAM <b>4GB TARGET</b>
+        </span>
+
+        <span>
+          CLASSIFIER <b>QWEN-2.5-1.5B</b>
+        </span>
+
+        <span>
+          ORCHESTRATION <b>LANGGRAPH</b>
+        </span>
+
+
+        <!-- SET 2
+             Duplicate for seamless infinite scrolling -->
+
+        <span>
+          AGA <b>60.4%</b>
+        </span>
+
+        <span>
+          AVG TRUST <b>82%</b>
+        </span>
+
+        <span>
+          GRAPH DB <b>KÙZUDB</b>
+        </span>
+
+        <span>
+          RECOVERY <b>≤ 3 RETRIES</b>
+        </span>
+
+        <span>
+          VRAM <b>4GB TARGET</b>
+        </span>
+
+        <span>
+          CLASSIFIER <b>QWEN-2.5-1.5B</b>
+        </span>
+
+        <span>
+          ORCHESTRATION <b>LANGGRAPH</b>
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- =======================================================
+         HOW IT WORKS
+         ======================================================= -->
+
+    <section
+      class="section flow-section"
+      id="how"
+    >
+
+      <p class="section-eyebrow">
+        How it works
+      </p>
+
+
+      <h2>
+        Every plan passes through the same four gates.
+      </h2>
+
+
+      <p class="desc">
+
+        The full pipeline — classifier, plan libraries,
+        graph validation and bounded recovery — is laid out
+        in detail on the systems page.
+
+      </p>
+
+
+      <div class="flow-strip">
+
+
+        <!-- STEP 01 -->
+
+        <div class="flow-card">
+
+          <span class="flow-index">
+            01
+          </span>
+
+          <h4>
+            Classify
+          </h4>
+
+          <p>
+
+            A local, 4-bit Qwen-2.5-1.5B model routes the
+            command to one of five plan libraries.
+
+          </p>
+
+        </div>
+
+
+        <!-- STEP 02 -->
+
+        <div class="flow-card">
+
+          <span class="flow-index">
+            02
+          </span>
+
+          <h4>
+            Search
+          </h4>
+
+          <p>
+
+            Adaptive coordinate search proposes a candidate
+            path before anything touches hardware.
+
+          </p>
+
+        </div>
+
+
+        <!-- STEP 03 -->
+
+        <div class="flow-card">
+
+          <span class="flow-index">
+            03
+          </span>
+
+          <h4>
+            Validate
+          </h4>
+
+          <p>
+
+            Every step is checked against the KùzuDB
+            constraint graph via Cypher — not a heuristic.
+
+          </p>
+
+        </div>
+
+
+        <!-- STEP 04 -->
+
+        <div class="flow-card">
+
+          <span class="flow-index">
+            04
+          </span>
+
+          <h4>
+            Decide &amp; Log
+          </h4>
+
+          <p>
+
+            Approve, recover, or reject — with a cited
+            evidence trail either way.
+
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div
+        class="hero-ctas"
+        style="justify-content:center; margin-top:36px;"
+      >
+
+        <a
+          href="/static/systems.html"
+          class="btn btn-primary"
+        >
+          See the full architecture →
+        </a>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         SATELLITE SCROLL DECONSTRUCTION
+         ======================================================= -->
+
+    <section
+      class="satellite-scroll"
+      id="satellite-animation"
+    >
+
+      <div class="satellite-sticky">
+
+
+        <canvas
+          id="satellite-canvas"
+          aria-label="Interactive exploded-view satellite diagram"
+        ></canvas>
+
+
+        <!-- Satellite description -->
+
+        <div class="satellite-content">
+
+          <p class="section-eyebrow">
+            Engineering Visualization
+          </p>
+
+
+          <h2>
+
+            Constraint validation.<br>
+            Component by component.
+
+          </h2>
+
+
+          <p>
+
+            Scroll to deconstruct the platform. Each subsystem
+            separates into an annotated engineering view —
+            the same physical model the constraint graph
+            validates against.
+
+          </p>
+
+
+          <div class="satellite-status">
+
+            <span class="status-dot"></span>
+
+            CONSTRAINT GRAPH ACTIVE
+
+          </div>
+
+        </div>
+
+
+        <!-- Frame counter -->
+
+        <div class="satellite-frame-counter">
+
+          <span id="satellite-phase">
+            ASSEMBLED
+          </span>
+
+          <span aria-hidden="true">
+            ·
+          </span>
+
+          <span id="satellite-progress">
+            0%
+          </span>
+
+        </div>
+
+
+        <!-- Scroll hint -->
+
+        <div
+          class="satellite-scroll-hint"
+          id="satellite-scroll-hint"
+        >
+
+          <span class="chevron"></span>
+
+          Scroll to deconstruct
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         MISSION BRIEF
+         ======================================================= -->
+
+    <section
+      class="section mission-brief"
+      id="brief"
+    >
+
+      <div
+        class="mission-scan-line"
+        aria-hidden="true"
+      ></div>
+
+
+      <!-- Header -->
+
+      <div class="mission-header">
+
+        <p class="mission-label">
+
+          <span class="mission-signal"></span>
+
+          PROBLEM
+
+        </p>
+
+
+        <h2>
+
+          LLMs hallucinate plans that sound right and
+          physically can't happen.
+
+        </h2>
+
+
+        <p class="desc">
+
+          In safety-critical domains — space, disaster
+          response, industrial arms — a confidently wrong
+          plan is worse than a slow one. PAGA exists to
+          catch action hallucination before execution,
+          using physics and a constraint graph instead of
+          another model's confidence score.
+
+        </p>
+
+      </div>
+
+
+      <!-- Metrics -->
+
+      <div class="brief-grid">
+
+
+        <!-- CARD 01 -->
+
+        <div
+          class="panel mission-card"
+          data-delay="0"
+        >
+
+          <div class="mission-card-top">
+
+            <span class="mission-card-code">
+              01 · METRIC
+            </span>
+
+          </div>
+
+
+          <div class="mission-card-line"></div>
+
+
+          <div class="stat-box">
+
+            <div class="label">
+              Action Grounding Accuracy
+            </div>
+
+            <div
+              class="value"
+              data-count="60"
+              data-suffix="%"
+            >
+              0%
+            </div>
+
+          </div>
+
+
+          <div class="mission-card-status">
+
+            <span></span>
+
+            GRAPH VALIDATED
+
+          </div>
+
+        </div>
+
+
+        <!-- CARD 02 -->
+
+        <div
+          class="panel mission-card"
+          data-delay="120"
+        >
+
+          <div class="mission-card-top">
+
+            <span class="mission-card-code">
+              02 · VALIDATION
+            </span>
+
+          </div>
+
+
+          <div class="mission-card-line"></div>
+
+
+          <div class="stat-box">
+
+            <div class="label">
+              Graph engine
+            </div>
+
+
+            <div class="value mission-text-value">
+              KùzuDB
+            </div>
+
+          </div>
+
+
+          <div class="mission-card-status">
+
+            <span></span>
+
+            CYPHER QUERIES
+
+          </div>
+
+        </div>
+
+
+        <!-- CARD 03 -->
+
+        <div
+          class="panel mission-card"
+          data-delay="240"
+        >
+
+          <div class="mission-card-top">
+
+            <span class="mission-card-code">
+              03 · RECOVERY
+            </span>
+
+          </div>
+
+
+          <div class="mission-card-line"></div>
+
+
+          <div class="stat-box">
+
+            <div class="label">
+              Max retries
+            </div>
+
+
+            <div
+              class="value"
+              data-count="3"
+            >
+              0
+            </div>
+
+          </div>
+
+
+          <div class="mission-card-status">
+
+            <span></span>
+
+            BOUNDED LOOP
+
+          </div>
+
+        </div>
+
+
+        <!-- CARD 04 -->
+
+        <div
+          class="panel mission-card"
+          data-delay="360"
+        >
+
+          <div class="mission-card-top">
+
+            <span class="mission-card-code">
+              04 · FOOTPRINT
+            </span>
+
+          </div>
+
+
+          <div class="mission-card-line"></div>
+
+
+          <div class="stat-box">
+
+            <div class="label">
+              Runs on
+            </div>
+
+
+            <div class="value mission-text-value">
+              4GB VRAM
+            </div>
+
+          </div>
+
+
+          <div class="mission-card-status">
+
+            <span></span>
+
+            CONSUMER HARDWARE
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         TECHNOLOGY STACK
+         ======================================================= -->
+
+    <section
+      class="section"
+      id="stack"
+    >
+
+      <p class="section-eyebrow">
+        Built with
+      </p>
+
+
+      <h2>
+
+        Small local model, symbolic planner,
+        real graph database.
+
+      </h2>
+
+
+      <div class="tech-strip">
+
+        <span class="tech-pill">
+          Python
+        </span>
+
+        <span class="tech-pill">
+          Qwen-2.5-1.5B · 4-bit
+        </span>
+
+        <span class="tech-pill">
+          KùzuDB
+        </span>
+
+        <span class="tech-pill">
+          LangGraph
+        </span>
+
+        <span class="tech-pill">
+          Sentence-Transformers
+        </span>
+
+        <span class="tech-pill">
+          SQLite + embeddings
+        </span>
+
+        <span class="tech-pill">
+          FastAPI
+        </span>
+
+        <span class="tech-pill">
+          Three.js
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         CTA
+         ======================================================= -->
+
+    <section class="cta-band">
+
+      <h2>
+        Watch the constraint graph work in real time.
+      </h2>
+
+
+      <p>
+
+        Live Mars-globe telemetry, benchmark results and
+        the evidence trail — all in one dashboard.
+
+      </p>
+
+
+      <div class="cta-row">
+
+        <a
+          href="/static/index.html"
+          class="btn btn-primary btn-lg"
+        >
+          Open Dashboard
+        </a>
+
+
+        <a
+          href="/static/systems.html"
+          class="btn btn-ghost btn-lg"
+        >
+          Explore Architecture
+        </a>
+
+      </div>
+
+    </section>
+
+
+    <!-- =======================================================
+         FOOTER
+         ======================================================= -->
+
+    <footer class="site-footer">
+
+      PAGA · PLAN-AGNOSTIC GRAPH-GROUNDED ACTION
+      ASSURANCE FOR EMBODIED AGENTS
+
+    </footer>
+
+  </main>
+
+
+  <!-- =========================================================
+       JAVASCRIPT
+       ========================================================= -->
+
+  <script
+    type="module"
+    src="/static/home.js"
+  ></script>
+
+</body>
+</html>

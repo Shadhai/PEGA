@@ -1,0 +1,52 @@
+{
+  "source": "ISS Reference Guide 2015 + CSA Canadarm2 Documentation",
+  "robot": "Space Station Remote Manipulator System (SSRMS / Canadarm2)",
+  "dof": 7,
+  "length_m": 17.6,
+  "mass_kg": 1800,
+  "max_payload_kg": 116000,
+  "joints": [
+    {
+      "joint": "shoulder_roll",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 4.0
+    },
+    {
+      "joint": "shoulder_yaw",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 4.0
+    },
+    {
+      "joint": "shoulder_pitch",
+      "min_deg": -90,
+      "max_deg": 90,
+      "max_vel_deg_s": 4.0
+    },
+    {
+      "joint": "elbow_pitch",
+      "min_deg": -120,
+      "max_deg": 0,
+      "max_vel_deg_s": 4.0
+    },
+    {
+      "joint": "wrist_roll",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 6.0
+    },
+    {
+      "joint": "wrist_yaw",
+      "min_deg": -90,
+      "max_deg": 90,
+      "max_vel_deg_s": 6.0
+    },
+    {
+      "joint": "wrist_pitch",
+      "min_deg": -90,
+      "max_deg": 90,
+      "max_vel_deg_s": 6.0
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+# Git and local development files
+.git
+.gitignore
+.vscode
+.idea
+venv
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Large local models: minilm is explicitly re-included below because the API
+# loads it during startup. Mount qwen2.5-1.5b at runtime for /api/run.
+models/*
+!models/minilm/
+!models/minilm/**
+
+# Downloaded and generated data
+mars2020_meda
+data/raw
+data/processed
+data/graph_db
+data/vector_db
+data/experience.db
+webapp/data
+logs
+output
+benchmark_progress.json
+
+# Local secrets and temporary files
+.env
+.env.*
+*.secret
+secrets.*
+*.tmp
+*.temp
+*.swp

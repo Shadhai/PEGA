@@ -1,0 +1,68 @@
+# Python bytecode, caches, and test reports
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local Python environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.secret
+secrets.*
+
+# Downloaded models and accelerator/offload state
+/models/*
+!/models/.gitkeep
+
+# Downloaded source data and generated processing stores
+/mars2020_meda/
+/data/raw/
+/data/processed/
+/data/graph_db/
+/data/vector_db/
+/data/experience.db
+/webapp/data/
+
+# Runtime logs and generated reports
+/logs/*
+!/logs/.gitkeep
+/benchmark_progress.json
+/output/*
+!/output/.gitkeep
+
+# Local databases and generated binary artifacts
+*.db
+*.sqlite
+*.sqlite3
+*.kuzu
+*.hindex.ovf
+*.safetensors
+*.ckpt
+*.pth
+*.pt
+*.onnx
+
+# IDE and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.bak

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="System architecture and mission workflow — Plan-Agnostic Graph-Grounded Action Assurance for Embodied Agents">
+  <title>PAGA – System Architecture &amp; Workflow</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">◈</div>
+      <div class="brand-text">
+        <h1>PAGA</h1>
+        <p class="subtitle">Graph-Grounded Action Assurance</p>
+      </div>
+    </div>
+    <div class="top-bar-actions">
+      <nav class="nav-links">
+        <a class="nav-link" href="/static/home.html">Home</a>
+        <a class="nav-link" href="/static/index.html">Dashboard</a>
+        <a class="nav-link active" href="/static/systems.html">Systems</a>
+      </nav>
+      <button id="themeToggle" class="btn btn-primary" type="button">🌙 Dark</button>
+    </div>
+  </header>
+
+  <main class="systems-page">
+    <div class="systems-header">
+      <p class="section-eyebrow">Systems reference</p>
+      <h2>Architecture &amp; workflow</h2>
+      <p>
+        The full pipeline — from a natural-language command to an approved, evidence-logged
+        action — laid out as a schematic. Hover or tap any block for what it actually does.
+      </p>
+    </div>
+
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-arch" type="button">Architecture</button>
+      <button class="tab-btn" data-tab="tab-workflow" type="button">Workflow</button>
+    </div>
+
+    <div class="tab-content active" id="tab-arch"></div>
+    <div class="tab-content" id="tab-workflow"></div>
+  </main>
+
+  <footer class="site-footer">
+    PAGA · PLAN-AGNOSTIC GRAPH-GROUNDED ACTION ASSURANCE FOR EMBODIED AGENTS
+  </footer>
+
+  <script type="module" src="/static/systems.js"></script>
+</body>
+</html>

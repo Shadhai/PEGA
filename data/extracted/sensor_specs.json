@@ -1,0 +1,16 @@
+{
+  "source": "NASA PDS Mars 2020 MEDA Bundle",
+  "instruments": {
+    "TIRS": {
+      "name": "Thermal Infrared Sensor",
+      "channels": 5,
+      "measurements": [
+        "DOWNWARD_LW_IRRADIANCE",
+        "AIR_TEMP",
+        "GROUND_TEMP"
+      ],
+      "air_temp_accuracy_k": 2.12,
+      "ground_temp_accuracy_k": 3.8
+    }
+  }
+}

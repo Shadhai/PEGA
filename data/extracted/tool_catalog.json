@@ -1,0 +1,21 @@
+{
+  "source": "NASA EVA Systems / ISS Spacewalk Documentation",
+  "tools": [
+    {"name": "pistol_grip_tool", "type": "powered", "mass_kg": 2.7, "max_force_n": 100, "max_torque_nm": 40},
+    {"name": "ratchet_wrench", "type": "manual", "mass_kg": 1.4, "max_force_n": 200, "max_torque_nm": 70},
+    {"name": "thermal_blanket_kit", "type": "repair", "mass_kg": 5.0, "max_force_n": 15},
+    {"name": "cable_cutter", "type": "manual", "mass_kg": 0.8, "max_force_n": 200},
+    {"name": "inspection_camera", "type": "sensor", "mass_kg": 1.8, "max_force_n": 5, "resolution": "1080p"},
+    {"name": "torque_wrench_eva", "type": "manual", "mass_kg": 2.1, "max_force_n": 200, "max_torque_nm": 100},
+    {"name": "sample_scoop", "type": "manual", "mass_kg": 1.5, "max_force_n": 20, "capacity_ml": 500},
+    {"name": "leak_detector", "type": "sensor", "mass_kg": 3.2, "max_force_n": 2, "sensitivity_psi_min": 0.1},
+    {
+  "name": "thermal_applicator",
+  "type": "repair",
+  "mass_kg": 2.3,
+  "max_force_n": 15,
+  "max_torque_nm": null,
+  "purpose": "Thermal shield repair"
+}
+  ]
+}
