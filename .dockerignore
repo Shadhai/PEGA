@@ -23,9 +23,7 @@ data/raw
 data/processed
 data/graph_db
 data/vector_db
-data/experience.db
 webapp/data
-logs
 output
 benchmark_progress.json
 

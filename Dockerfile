@@ -14,7 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src ./src
 COPY webapp ./webapp
 COPY data/extracted ./data/extracted
+COPY data/experience.db ./data/experience.db
 COPY models/minilm ./models/minilm
+COPY logs ./logs
 
 RUN mkdir -p data/graph_db logs/evidence logs/benchmarks
 RUN chown -R appuser:appuser /app

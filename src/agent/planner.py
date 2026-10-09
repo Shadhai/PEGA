@@ -7,9 +7,9 @@ import json
 import random
 from typing import List, Dict, Any
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
-from src.graph.queries import ConstraintQueries
+from src.graph.queries import get_graph
 from src.validator.kinematics import KinematicsValidator
 from src.memory.experience import ExperienceMemory
 
@@ -27,6 +27,18 @@ class Planner:
             device_map="auto",
             trust_remote_code=True
         )
+
+        # Replace the checkpoint's default sampling config entirely.
+        # This avoids the repeated warnings from temperature/top_p/top_k
+        # while keeping deterministic generation (do_sample=False).
+        self.model.generation_config = GenerationConfig(
+            do_sample=False,
+            pad_token_id=self.tokenizer.eos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+            bos_token_id=getattr(self.tokenizer, "bos_token_id", self.tokenizer.eos_token_id),
+        )
+        self.model.config.do_sample = False
+
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.memory = ExperienceMemory()
         print("  Planner ready!")
@@ -38,13 +50,23 @@ class Planner:
         # 1. Classify task with LLM (or fallback)
         task_info = self._classify_command(command)
         task_type = task_info.get("task_type", "general")
-        tool = task_info.get("tool", "thermal_applicator")
+        tool = self._normalize_tool_name(
+            task_info.get("tool", "thermal_applicator")
+        )
 
         # 2. Find safe coordinates (memory -> candidates -> random search)
         safe_coords = self._find_safe_coordinates(task_type, constraints)
 
         # 3. Build plan using symbolic library
         return self._build_plan(task_type, tool, safe_coords)
+
+    @staticmethod
+    def _normalize_tool_name(tool: str) -> str:
+        """Map legacy classifier aliases to catalog names."""
+        aliases = {
+            "torque_wrench": "torque_wrench_eva",
+        }
+        return aliases.get(tool, tool)
 
     # ------------------------------------------------------------------
     # LLM CLASSIFICATION
@@ -66,7 +88,7 @@ JSON:"""
                 outputs = self.model.generate(
                     **inputs,
                     max_new_tokens=60,
-                    do_sample=False,          # No temperature/top_p warnings
+                    do_sample=False,
                     pad_token_id=self.tokenizer.eos_token_id
                 )
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -87,7 +109,7 @@ JSON:"""
         if "inspect" in cmd or "camera" in cmd or "micrometeoroid" in cmd:
             return {"task_type": "inspect", "tool": "inspection_camera", "target": "antenna"}
         if "replace" in cmd or "wrench" in cmd or "tool change" in cmd:
-            return {"task_type": "replace", "tool": "torque_wrench", "target": "holster"}
+            return {"task_type": "replace", "tool": "torque_wrench_eva", "target": "holster"}
         if "sample" in cmd or "scoop" in cmd or "regolith" in cmd:
             return {"task_type": "sample", "tool": "sample_scoop", "target": "surface"}
         if "leak" in cmd or "detector" in cmd or "ammonia" in cmd:
@@ -98,20 +120,22 @@ JSON:"""
     # ADAPTIVE SAFE COORDINATE SEARCH
     # ------------------------------------------------------------------
     def _find_safe_coordinates(self, task_type: str, constraints: List[Dict]) -> List[float]:
-        graph = ConstraintQueries()
+        graph = get_graph()
         kin = KinematicsValidator()
 
         # ---- 1. Memory-first: use previously successful coordinates ----
         try:
             successful = self.memory.get_successful_strategies(task_type)
+            print(f"  [Memory] Found {len(successful)} successful past strategies for '{task_type}'")
             for strat in successful:
                 coords = strat.get("safe_coordinates")
                 if coords and len(coords) == 3:
                     reachable, _ = kin.is_reachable(coords)
                     if reachable and graph.check_collision(coords[0], coords[1], coords[2])["passed"]:
+                        print(f"  [Memory] Reusing safe coordinates: {coords}")
                         return coords
-        except Exception:
-            pass  # Memory is non-critical
+        except Exception as e:
+            print(f"  [Memory] Retrieval failed: {e}")
 
         # ---- 2. Task-specific candidate points ----
         candidates = {

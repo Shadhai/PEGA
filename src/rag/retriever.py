@@ -115,25 +115,52 @@ class Retriever:
 
         try:
             with open(
-                "data/raw/thermal_constraints.json",
+                "data/extracted/thermal_constraints.json",
                 "r",
                 encoding="utf-8",
             ) as f:
                 thermal_data = json.load(f)
 
-            for mat in thermal_data:
-                docs.append(
-                    {
-                        "text": (
-                            f"Material: {mat['material']}. "
-                            f"Range: "
-                            f"{mat['min_temp_c']}C to "
-                            f"{mat['max_temp_c']}C."
-                        ),
-                        "source": "thermal_constraints",
-                        "type": "nasa_doc",
-                    }
-                )
+            thermal_entries = (
+                thermal_data
+                if isinstance(thermal_data, list)
+                else [thermal_data]
+            )
+
+            for mat in thermal_entries:
+                if not isinstance(mat, dict):
+                    continue
+
+                if "air_temperature_celsius" in mat:
+                    air = mat["air_temperature_celsius"]
+                    ground = mat.get("ground_temperature_celsius", {})
+                    docs.append(
+                        {
+                            "text": (
+                                "Mars atmospheric temperature range: "
+                                f"{air.get('min', 'N/A')}C to "
+                                f"{air.get('max', 'N/A')}C, "
+                                f"mean {air.get('mean', 'N/A')}C. "
+                                "Ground temperature range: "
+                                f"{ground.get('min', 'N/A')}C to "
+                                f"{ground.get('max', 'N/A')}C."
+                            ),
+                            "source": "thermal_constraints",
+                            "type": "nasa_doc",
+                        }
+                    )
+                elif "material" in mat:
+                    docs.append(
+                        {
+                            "text": (
+                                f"Material: {mat['material']}. "
+                                f"Range: {mat.get('min_temp_c', 'N/A')}C to "
+                                f"{mat.get('max_temp_c', 'N/A')}C."
+                            ),
+                            "source": "thermal_constraints",
+                            "type": "nasa_doc",
+                        }
+                    )
 
         except FileNotFoundError:
             print(
@@ -151,24 +178,35 @@ class Retriever:
 
         try:
             with open(
-                "data/raw/failure_reports.json",
+                "data/extracted/failure_reports.json",
                 "r",
                 encoding="utf-8",
             ) as f:
                 failure_data = json.load(f)
 
-            for fail in failure_data:
-                recovery_steps = fail.get(
-                    "recovery_steps",
-                    []
-                )
+            if isinstance(failure_data, dict) and "reports" in failure_data:
+                failure_entries = failure_data["reports"]
+            elif isinstance(failure_data, list):
+                failure_entries = failure_data
+            else:
+                failure_entries = []
+
+            for fail in failure_entries:
+                if not isinstance(fail, dict):
+                    continue
+
+                recovery_steps = fail.get("recovery_steps", [])
+                if isinstance(recovery_steps, str):
+                    recovery_text = recovery_steps
+                else:
+                    recovery_text = " ".join(recovery_steps[:2])
 
                 docs.append(
                     {
                         "text": (
-                            f"Failure: {fail['title']}. "
-                            f"Recovery: "
-                            f"{' '.join(recovery_steps[:2])}"
+                            f"Failure: {fail.get('title', 'Unknown')}. "
+                            f"Symptom: {fail.get('symptom', '')}. "
+                            f"Recovery: {recovery_text}"
                         ),
                         "source": "failure_reports",
                         "type": "nasa_doc",

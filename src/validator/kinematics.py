@@ -60,6 +60,24 @@ class KinematicsValidator:
         base = np.array([0.0, 0.0, 0.0])
         distance = np.linalg.norm(target - base)
         return distance <= self.max_reach, distance
+
+    def sample_trajectory(
+        self,
+        start: List[float],
+        end: List[float],
+        n_samples: int = 15,
+    ) -> List[List[float]]:
+        """Return evenly spaced points between start and end, inclusive."""
+        if n_samples < 2:
+            raise ValueError("n_samples must be at least 2")
+
+        start_np = np.array(start, dtype=float)
+        end_np = np.array(end, dtype=float)
+        alphas = np.linspace(0.0, 1.0, n_samples)
+        return [
+            list(start_np + alpha * (end_np - start_np))
+            for alpha in alphas
+        ]
     
     def check_collision_with_obstacles(self, positions: List[np.ndarray], 
                                          obstacles: List[Dict]) -> List[Dict]:

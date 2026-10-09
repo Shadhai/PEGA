@@ -85,43 +85,20 @@ class ExperienceMemory:
 
         similarities = []
         for row in rows:
-            stored_embedding = row[10]
-            if not isinstance(stored_embedding, bytes):
+            raw_embedding = row[9] if len(row) > 9 else None
+            if not isinstance(raw_embedding, (bytes, bytearray, memoryview)):
                 continue
 
-            stored_embedding = np.frombuffer(stored_embedding, dtype=np.float32)
+            try:
+                stored_embedding = np.frombuffer(raw_embedding, dtype=np.float32)
+            except ValueError:
+                continue
+
             similarity = np.dot(query_embedding, stored_embedding)
             similarities.append((similarity, row))
 
         similarities.sort(key=lambda x: x[0], reverse=True)
 
-        results = []
-        for sim, row in similarities[:top_k]:
-            if sim > 0.3:
-                results.append({
-                    "similarity": float(sim),
-                    "task_type": row[1],
-                    "command": row[2],
-                    "plan": json.loads(row[3]),
-                    "outcome": row[4],
-                    "trust_score": row[5],
-                    "safe_coordinates": json.loads(row[8]) if row[8] else None,
-                    "recovery_count": row[7]
-                })
-            return results
-        query_embedding = self.embedder.encode([command])[0]
-        conn = self._get_conn()
-        cursor = conn.execute("SELECT * FROM experiences ORDER BY id DESC LIMIT 50")
-        rows = cursor.fetchall()
-        conn.close()
-        if not rows:
-            return []
-        similarities = []
-        for row in rows:
-            stored_embedding = np.frombuffer(row[10], dtype=np.float32)
-            similarity = np.dot(query_embedding, stored_embedding)
-            similarities.append((similarity, row))
-        similarities.sort(key=lambda x: x[0], reverse=True)
         results = []
         for sim, row in similarities[:top_k]:
             if sim > 0.3:

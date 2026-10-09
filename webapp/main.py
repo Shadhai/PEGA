@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import json
+import math
 
 from src.graph.queries import ConstraintQueries
 from src.memory.experience import ExperienceMemory
@@ -22,6 +23,21 @@ graph = ConstraintQueries()
 memory = ExperienceMemory()
 
 EVIDENCE_DIR = Path("logs/evidence")
+BENCHMARK_FILE = Path("logs/benchmarks/benchmark_FINAL.json")
+TASK_LIBRARY_FILE = Path("data/extracted/task_library.json")
+
+
+def json_safe(value):
+    """Replace non-finite numeric values before Starlette serializes responses."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [json_safe(item) for item in value]
+    return value
 
 
 @app.get("/")
@@ -69,14 +85,22 @@ def get_joints():
 
 @app.get("/api/benchmark/latest")
 def latest_benchmark():
-    bench_dir = Path("logs/benchmarks")
-    if not bench_dir.exists():
+    if not BENCHMARK_FILE.exists():
         return {"error": "No benchmarks"}
-    files = sorted(bench_dir.glob("*.json"), reverse=True)
-    if not files:
+    with BENCHMARK_FILE.open(encoding="utf-8") as f:
+        return json_safe(json.load(f))
+
+
+@app.get("/api/benchmark/result/{result_index}")
+def benchmark_result(result_index: int):
+    if not BENCHMARK_FILE.exists():
         return {"error": "No benchmarks"}
-    with open(files[0]) as f:
-        return json.load(f)
+    with BENCHMARK_FILE.open(encoding="utf-8") as f:
+        benchmark = json.load(f)
+    results = benchmark.get("results", [])
+    if result_index < 0 or result_index >= len(results):
+        return {"error": "Benchmark result not found"}
+    return json_safe(results[result_index])
 
 
 @app.get("/api/evidence/recent")
@@ -151,18 +175,45 @@ class CommandRequest(BaseModel):
     command: str
 
 
+def find_library_task(task_id: str):
+    if not TASK_LIBRARY_FILE.exists():
+        return None
+    try:
+        with TASK_LIBRARY_FILE.open(encoding="utf-8") as f:
+            tasks = json.load(f).get("tasks", [])
+    except (OSError, json.JSONDecodeError):
+        return None
+    return next((task for task in tasks if task.get("task_id") == task_id), None)
+
+
 @app.post("/api/run")
 def run_pipeline(req: CommandRequest):
     from src.agent.orchestrator import CINT70Orchestrator
 
     orch = CINT70Orchestrator()
-    result = orch.execute(req.command)
+    library_task = find_library_task(req.command.strip())
+    if library_task and library_task.get("adversarial_plan"):
+        result = orch.execute_custom_plan(
+            command=library_task.get("instruction", req.command),
+            plan=library_task["adversarial_plan"],
+            task_id=library_task.get("task_id", req.command),
+        )
+    elif library_task:
+        result = orch.execute(
+            library_task.get("instruction", req.command),
+            task_id=library_task.get("task_id", req.command),
+            expected_safe=library_task.get("expected_safe", True),
+        )
+    else:
+        result = orch.execute(req.command)
 
-    return {
+    return json_safe({
         "approved": result.get("all_checks_passed", False),
         "trust_score": result.get("trust_score", 0),
         "steps": len(result.get("plan", [])),
         "violations": result.get("violations", []),
         "recovery_count": result.get("recovery_count", 0),
         "plan": result.get("plan", []),
-    }
+        "task_id": result.get("task_id"),
+        "expected_safe": result.get("expected_safe"),
+    })

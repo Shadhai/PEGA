@@ -1,0 +1,9 @@
+{
+  "source": "Standard industrial end-effectors",
+  "tools": [
+    {"name": "gripper",      "type": "end_effector", "mass_kg": 0.9, "max_force_n": 50, "max_torque_nm": 20},
+    {"name": "welder",       "type": "tool",         "mass_kg": 1.4, "max_force_n": 20, "max_torque_nm": 10},
+    {"name": "camera",       "type": "sensor",       "mass_kg": 0.4, "max_force_n": 5},
+    {"name": "pneumatic_suction", "type": "end_effector", "mass_kg": 0.6, "max_force_n": 100}
+  ]
+}

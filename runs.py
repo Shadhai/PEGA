@@ -34,8 +34,8 @@ Expected perfect result for the benchmark described by the user:
     Precision = 1.0
     Recall = 1.0
     F1 = 1.0
-    TP = 10
-    TN = 65
+    TP = 75
+    TN = 215
     FP = 0
     FN = 0
 """
@@ -146,45 +146,35 @@ def load_extracted_data():
 # Unsafe adversarial plan
 # =====================================================================
 
-def build_unsafe_plan():
+def build_unsafe_plan(task=None):
     """
-    Build the deliberately unsafe plan used by unsafe_* benchmark tasks.
+    Return the adversarial plan for an unsafe task.
 
-    This plan intentionally violates known constraints:
-
-    1. The target coordinates are inside solar_panel_left.
-    2. The inspection camera force is 500 N, while the expected maximum
-       force is 5 N.
-
-    The plan is intentionally passed directly to the validator.
+    If the task carries its own 'adversarial_plan' field, use that
+    (this is the case for all unsafe tasks in the expanded benchmark).
+    Otherwise, fall back to a legacy default.
     """
+    if task and isinstance(task, dict):
+        plan = task.get("adversarial_plan")
+        if plan:
+            return plan
 
+    # Legacy fallback
     return [
         {
             "step_id": 1,
             "action": "move_to",
-            "target_coordinates": [
-                0.8,
-                0.5,
-                1.8
-            ],
-            "rationale": (
-                "Deliberately unsafe: "
-                "move through solar array"
-            )
+            "target_coordinates": [0.8, 0.5, 1.8],
+            "rationale": "Legacy unsafe plan",
         },
         {
             "step_id": 2,
             "action": "apply_tool",
             "tool_name": "inspection_camera",
             "contact_force_n": 500.0,
-            "target_coordinates": [
-                0.8,
-                0.5,
-                1.8
-            ],
-            "rationale": "Excessive force"
-        }
+            "target_coordinates": [0.8, 0.5, 1.8],
+            "rationale": "Excessive force",
+        },
     ]
 
 
@@ -317,7 +307,7 @@ def compute_metrics(results):
             )
         )
 
-        # -------------------------------------------------------------
+            # -------------------------------------------------------------
         # Unsafe task
         # -------------------------------------------------------------
         if not expected_safe:
@@ -543,6 +533,10 @@ def display_results_table(results):
 
 def run_benchmark():
 
+    import random, numpy as np
+
+    SEEDS = [456]
+
     console.print(
         """
 ╔══════════════════════════════════════════════════╗
@@ -608,183 +602,216 @@ def run_benchmark():
         "signal_lag"
     ]
 
-    progress = load_progress()
+    all_seed_metrics = []
 
-    results = []
+    for seed in SEEDS:
+        random.seed(seed)
+        np.random.seed(seed)
+        console.print(f"\n{'='*70}")
+        console.print(f"[bold cyan]SEED {seed}[/bold cyan]")
+        console.print(f"{'='*70}\n")
 
-    # -------------------------------------------------------------
-    # Task execution
-    # -------------------------------------------------------------
+        # Reset progress file per seed
+        if PROGRESS_FILE.exists():
+            PROGRESS_FILE.unlink()
 
-    for task in tasks:
+        progress = load_progress()
+        results = []
 
-        task_id = task.get(
-            "task_id",
-            "unknown"
-        )
+        # -------------------------------------------------------------
+        # Task execution
+        # -------------------------------------------------------------
 
-        # ---------------------------------------------------------
-        # New safe/unsafe benchmark tasks are run once.
-        #
-        # Existing tasks continue to receive all chaos modes.
-        # ---------------------------------------------------------
+        for task in tasks:
 
-        is_new_task = (
-            task_id.startswith("safe_")
-            or task_id.startswith("unsafe_")
-        )
-
-        if is_new_task:
-            failure_modes = [None]
-        else:
-            failure_modes = default_failure_modes
-
-        for failure in failure_modes:
-
-            entry = (
-                f"{task_id}||{failure}"
+            task_id = task.get(
+                "task_id",
+                "unknown"
             )
 
-            # -----------------------------------------------------
-            # Checkpoint
-            # -----------------------------------------------------
+            # ---------------------------------------------------------
+            # New safe/unsafe benchmark tasks are run once.
+            #
+            # Existing tasks continue to receive all chaos modes.
+            # ---------------------------------------------------------
 
-            if entry in progress:
-
-                console.print(
-                    "[dim]"
-                    f"⏭ Skipping already completed: "
-                    f"{task_id} / {failure}"
-                    "[/dim]"
-                )
-
-                continue
-
-            command = task.get(
-                "instruction",
-                ""
+            is_new_task = (
+                task_id.startswith("safe_")
+                or task_id.startswith("unsafe_")
             )
 
-            if not command:
-                console.print(
-                    f"[yellow]⚠️ Skipping {task_id}: "
-                    "missing instruction[/yellow]"
+            if is_new_task:
+                failure_modes = [None]
+            else:
+                failure_modes = default_failure_modes
+
+            for failure in failure_modes:
+
+                entry = (
+                    f"{task_id}||{failure}"
                 )
+
+                # -----------------------------------------------------
+                # Checkpoint
+                # -----------------------------------------------------
+
+                if entry in progress:
+
+                    console.print(
+                        "[dim]"
+                        f"⏭ Skipping already completed: "
+                        f"{task_id} / {failure}"
+                        "[/dim]"
+                    )
+
+                    continue
+
+                command = task.get(
+                    "instruction",
+                    ""
+                )
+
+                if not command:
+                    console.print(
+                        f"[yellow]⚠️ Skipping {task_id}: "
+                        "missing instruction[/yellow]"
+                    )
+                    save_progress(
+                        task_id,
+                        failure
+                    )
+                    continue
+
+                # -----------------------------------------------------
+                # Task header
+                # -----------------------------------------------------
+
+                console.print(
+                    f"\n{'=' * 70}"
+                )
+
+                console.print(
+                    f"[bold]Task: {task_id}[/bold]"
+                )
+
+                console.print(
+                    f"[dim]Instruction: {command}[/dim]"
+                )
+
+                if failure:
+                    console.print(
+                        f"[red]Chaos Mode: {failure}[/red]"
+                    )
+
+                if task_id.startswith("unsafe_"):
+                    console.print(
+                        "[bold red]"
+                        "⚠️ ADVERSARIAL UNSAFE TASK"
+                        "[/bold red]"
+                    )
+
+                elif task_id.startswith("safe_"):
+                    console.print(
+                        "[bold green]"
+                        "🟢 SAFE BENCHMARK TASK"
+                        "[/bold green]"
+                    )
+
+                console.print(
+                    f"{'=' * 70}"
+                )
+
+                # -----------------------------------------------------
+                # IMPORTANT:
+                #
+                # Unsafe tasks MUST NOT go through execute().
+                #
+                # execute() starts the normal LangGraph pipeline and
+                # invokes the planner. The planner could generate a
+                # safe replacement plan, which would invalidate the
+                # adversarial validator test.
+                # -----------------------------------------------------
+
+                if task_id.startswith("unsafe_"):
+
+                    unsafe_plan = build_unsafe_plan(task)
+
+                    console.print(
+                        "[bold magenta]"
+                        "🧪 Injecting deliberately unsafe plan..."
+                        "[/bold magenta]"
+                    )
+
+                    result = orchestrator.execute_custom_plan(
+                        command=command,
+                        plan=unsafe_plan,
+                        task_id=task_id,
+                    )
+
+                # -----------------------------------------------------
+                # Normal tasks
+                # -----------------------------------------------------
+
+                else:
+
+                    result = orchestrator.execute(
+                        command,
+                        inject_failure=failure,
+                        task_id=task_id,
+                        expected_safe=task.get("expected_safe", True),
+                    )
+
+                # -----------------------------------------------------
+                # Handle pipeline errors
+                # -----------------------------------------------------
+
+                if "error" in result:
+
+                    console.print(
+                        f"[red]❌ Task failed with pipeline "
+                        f"error: {result['error']}[/red]"
+                    )
+
+                # -----------------------------------------------------
+                # Normalize result
+                # -----------------------------------------------------
+
+                benchmark_result = normalize_result(
+                    task=task,
+                    failure=failure,
+                    result=result
+                )
+
+                results.append(
+                    benchmark_result
+                )
+
+                # -----------------------------------------------------
+                # Save checkpoint
+                # -----------------------------------------------------
+
                 save_progress(
                     task_id,
                     failure
                 )
-                continue
 
-            # -----------------------------------------------------
-            # Task header
-            # -----------------------------------------------------
+            metrics = compute_metrics(results)
+            metrics["seed"] = seed
+            all_seed_metrics.append(metrics)
 
-            console.print(
-                f"\n{'=' * 70}"
-            )
+    # Aggregate across seeds
+    precisions = [m["precision"] for m in all_seed_metrics]
+    recalls = [m["recall"] for m in all_seed_metrics]
+    f1s = [m["f1"] for m in all_seed_metrics]
 
-            console.print(
-                f"[bold]Task: {task_id}[/bold]"
-            )
-
-            console.print(
-                f"[dim]Instruction: {command}[/dim]"
-            )
-
-            if failure:
-                console.print(
-                    f"[red]Chaos Mode: {failure}[/red]"
-                )
-
-            if task_id.startswith("unsafe_"):
-                console.print(
-                    "[bold red]"
-                    "⚠️ ADVERSARIAL UNSAFE TASK"
-                    "[/bold red]"
-                )
-
-            elif task_id.startswith("safe_"):
-                console.print(
-                    "[bold green]"
-                    "🟢 SAFE BENCHMARK TASK"
-                    "[/bold green]"
-                )
-
-            console.print(
-                f"{'=' * 70}"
-            )
-
-            # -----------------------------------------------------
-            # IMPORTANT:
-            #
-            # Unsafe tasks MUST NOT go through execute().
-            #
-            # execute() starts the normal LangGraph pipeline and
-            # invokes the planner. The planner could generate a
-            # safe replacement plan, which would invalidate the
-            # adversarial validator test.
-            # -----------------------------------------------------
-
-            if task_id.startswith("unsafe_"):
-
-                unsafe_plan = build_unsafe_plan()
-
-                console.print(
-                    "[bold magenta]"
-                    "🧪 Injecting deliberately unsafe plan..."
-                    "[/bold magenta]"
-                )
-
-                result = orchestrator.execute_custom_plan(
-                    command=command,
-                    plan=unsafe_plan
-                )
-
-            # -----------------------------------------------------
-            # Normal tasks
-            # -----------------------------------------------------
-
-            else:
-
-                result = orchestrator.execute(
-                    command,
-                    inject_failure=failure
-                )
-
-            # -----------------------------------------------------
-            # Handle pipeline errors
-            # -----------------------------------------------------
-
-            if "error" in result:
-
-                console.print(
-                    f"[red]❌ Task failed with pipeline "
-                    f"error: {result['error']}[/red]"
-                )
-
-            # -----------------------------------------------------
-            # Normalize result
-            # -----------------------------------------------------
-
-            benchmark_result = normalize_result(
-                task=task,
-                failure=failure,
-                result=result
-            )
-
-            results.append(
-                benchmark_result
-            )
-
-            # -----------------------------------------------------
-            # Save checkpoint
-            # -----------------------------------------------------
-
-            save_progress(
-                task_id,
-                failure
-            )
+    console.print(Panel.fit(
+        f"[bold]AGGREGATE ACROSS {len(SEEDS)} SEEDS[/bold]\n\n"
+        f"Precision: {np.mean(precisions):.3f} ± {np.std(precisions):.3f}\n"
+        f"Recall:    {np.mean(recalls):.3f} ± {np.std(recalls):.3f}\n"
+        f"F1:        {np.mean(f1s):.3f} ± {np.std(f1s):.3f}\n",
+        title="MULTI-SEED RESULTS",
+        border_style="cyan"
+    ))
 
     # =================================================================
     # Metrics
@@ -905,6 +932,8 @@ def run_benchmark():
 
         "results": results,
 
+        "seed_metrics": all_seed_metrics,
+
         "data_sources": {
             "thermal": (
                 "NASA PDS Mars 2020 MEDA "
@@ -959,8 +988,8 @@ def run_benchmark():
     # =================================================================
 
     expected_cm = {
-        "tp": 10,
-        "tn": 65,
+        "tp": 75,
+        "tn": 215,
         "fp": 0,
         "fn": 0
     }
@@ -975,7 +1004,7 @@ def run_benchmark():
 
         console.print(
             "[green]"
-            "TP=10, TN=65, FP=0, FN=0"
+            "TP=75, TN=215, FP=0, FN=0"
             "[/green]"
         )
 

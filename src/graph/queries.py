@@ -9,11 +9,39 @@ from typing import Any, Dict, List
 import kuzu
 
 
+_GRAPH_INSTANCE = None
+
+
+def get_graph():
+    global _GRAPH_INSTANCE
+    if _GRAPH_INSTANCE is None:
+        _GRAPH_INSTANCE = ConstraintQueries()
+    return _GRAPH_INSTANCE
+
+
 class ConstraintQueries:
-    def __init__(self, db_path: str = "data/graph_db"):
+    def __init__(
+        self,
+        db_path: str = "data/graph_db_runtime",
+        domain: str = "space",
+    ):
+        self.domain = domain
+        if domain == "industrial":
+            self.joint_file = "data/extracted/joint_limits_industrial.json"
+            self.obstacle_file = "data/extracted/obstacle_map_industrial.json"
+            self.tool_file = "data/extracted/tool_catalog_industrial.json"
+        else:
+            self.joint_file = "data/extracted/joint_limits.json"
+            self.obstacle_file = "data/extracted/obstacle_map.json"
+            self.tool_file = "data/extracted/tool_catalog.json"
+
         os.makedirs(db_path, exist_ok=True)
 
-        self.db = kuzu.Database(db_path)
+        self.db = kuzu.Database(
+            db_path,
+            buffer_pool_size=128 * 1024 * 1024,
+            max_num_threads=2,
+        )
         self.conn = kuzu.Connection(self.db)
 
         self._init_data()
@@ -80,7 +108,7 @@ class ConstraintQueries:
 
         try:
             with open(
-                "data/extracted/joint_limits.json",
+                self.joint_file,
                 "r",
                 encoding="utf-8",
             ) as f:
@@ -119,7 +147,7 @@ class ConstraintQueries:
 
         try:
             with open(
-                "data/extracted/obstacle_map.json",
+                self.obstacle_file,
                 "r",
                 encoding="utf-8",
             ) as f:
@@ -170,7 +198,7 @@ class ConstraintQueries:
 
         try:
             with open(
-                "data/extracted/tool_catalog.json",
+                self.tool_file,
                 "r",
                 encoding="utf-8",
             ) as f:

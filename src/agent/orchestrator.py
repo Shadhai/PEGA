@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress
-
+from src.utils.evidence_db import EvidenceDB
 from .state import AgentState, PipelineStage, ViolationType
 from .planner import Planner
 from src.rag.retriever import Retriever
@@ -30,7 +30,14 @@ console = Console()
 class CINT70Orchestrator:
     """Production-grade CINT-70 with LangGraph recovery cycles"""
 
-    def __init__(self):
+    def __init__(self, ablation: dict = None):
+        self.ablation = ablation or {
+            "use_graph": True,
+            "use_kinematics": True,
+            "use_trajectory": True,
+            "use_force_check": True,
+        }
+
         console.print(
             "[bold cyan]╔══════════════════════════════════════╗[/bold cyan]"
         )
@@ -81,7 +88,10 @@ class CINT70Orchestrator:
                 description="Loading Chaos Suite..."
             )
             self.chaos = ChaosInjector()
+            self.evidence_db = EvidenceDB()
             progress.advance(task)
+
+        self._last_move_to_position: Dict[int, List[float]] = {}
 
         # Build LangGraph
         self.workflow = self._build_graph()
@@ -121,6 +131,10 @@ class CINT70Orchestrator:
             "node_reject",
             self._reject_node
         )
+        workflow.add_node(
+            "node_flag",
+            self._flag_node
+        )
 
         workflow.set_entry_point("node_retrieve")
 
@@ -141,6 +155,7 @@ class CINT70Orchestrator:
                 "approve": "node_approve",
                 "recover": "node_recover",
                 "reject": "node_reject",
+                "flag": "node_flag",
             },
         )
 
@@ -156,6 +171,11 @@ class CINT70Orchestrator:
 
         workflow.add_edge(
             "node_reject",
+            END
+        )
+
+        workflow.add_edge(
+            "node_flag",
             END
         )
 
@@ -240,6 +260,7 @@ class CINT70Orchestrator:
             "[yellow]🔍 PHASE 3: VALIDATION[/yellow]"
         )
 
+        self._last_move_to_position = {}
         violations = []
         all_passed = True
 
@@ -252,7 +273,7 @@ class CINT70Orchestrator:
             joint = step.get("joint")
             angle = step.get("target_angle_deg")
 
-            if joint and angle is not None:
+            if self.ablation["use_graph"] and joint and angle is not None:
                 result = self.graph.check_joint_limits(
                     joint,
                     float(angle)
@@ -280,7 +301,7 @@ class CINT70Orchestrator:
             tool = step.get("tool_name")
             force = step.get("contact_force_n")
 
-            if tool and force is not None:
+            if self.ablation["use_force_check"] and tool and force is not None:
                 result = self.graph.check_tool_force(
                     tool,
                     float(force)
@@ -305,7 +326,7 @@ class CINT70Orchestrator:
             # ---------------------------------------------------------
             # Check kinematics
             # ---------------------------------------------------------
-            if not self.kinematics.validate(step):
+            if self.ablation["use_kinematics"] and not self.kinematics.validate(step):
                 all_passed = False
 
                 violations.append({
@@ -324,30 +345,70 @@ class CINT70Orchestrator:
             # ---------------------------------------------------------
             # Check collision via GRAPH DB
             # ---------------------------------------------------------
-            if step.get("target_coordinates"):
-                x, y, z = step["target_coordinates"]
+            target_coordinates = step.get("target_coordinates")
 
-                result = self.graph.check_collision(
-                    float(x),
-                    float(y),
-                    float(z)
-                )
+            if self.ablation["use_graph"] and target_coordinates:
+                end = [
+                    float(target_coordinates[0]),
+                    float(target_coordinates[1]),
+                    float(target_coordinates[2]),
+                ]
 
-                if not result["passed"]:
-                    all_passed = False
+                # Build list of points to check
+                if self.ablation["use_trajectory"] and step.get("action") == "move_to":
+                    previous_end = self._last_move_to_position.get(-1)
+                    if previous_end is None:
+                        points_to_check = [end]
+                    else:
+                        try:
+                            points_to_check = self.kinematics.sample_trajectory(
+                                previous_end, end, n_samples=15
+                            )
+                        except Exception:
+                            points_to_check = [end]
+                else:
+                    points_to_check = [end]
 
-                    violations.append({
-                        "step_id": step_id,
-                        "type": ViolationType.COLLISION.value,
-                        "message": result["violation"],
-                        "severity": result["severity"],
-                        "evidence": "Graph DB: Obstacle query"
-                    })
-
-                    console.print(
-                        f"   ❌ Step {step_id}: "
-                        f"{result['violation']}"
+                # Check every point in the list
+                for idx, wp in enumerate(points_to_check):
+                    result = self.graph.check_collision(
+                        float(wp[0]),
+                        float(wp[1]),
+                        float(wp[2]),
                     )
+
+                    if not result["passed"]:
+                        all_passed = False
+
+                        if step.get("action") == "move_to" and len(points_to_check) > 1:
+                            message = (
+                                f"Trajectory collision at waypoint "
+                                f"{idx}/{len(points_to_check) - 1} "
+                                f"({wp[0]:.2f}, {wp[1]:.2f}, {wp[2]:.2f}): "
+                                f"{result['violation']}"
+                            )
+                            console.print(
+                                f"   ❌ Step {step_id}: "
+                                f"Trajectory collision at waypoint {idx}"
+                            )
+                        else:
+                            message = result["violation"]
+                            console.print(
+                                f"   ❌ Step {step_id}: "
+                                f"{result['violation']}"
+                            )
+
+                        violations.append({
+                            "step_id": step_id,
+                            "type": ViolationType.COLLISION.value,
+                            "message": message,
+                            "severity": result["severity"],
+                            "evidence": "Graph DB: Obstacle query",
+                        })
+                        break
+
+                if step.get("action") == "move_to":
+                    self._last_move_to_position[-1] = end
 
             # ---------------------------------------------------------
             # Step passed only if it has no violations
@@ -405,11 +466,21 @@ class CINT70Orchestrator:
     def _route_after_validation(
         self,
         state: AgentState
-    ) -> Literal["approve", "recover", "reject"]:
+    ) -> Literal["approve", "recover", "reject", "flag"]:
         """Decision logic after validation."""
 
         if state["all_checks_passed"]:
             return "approve"
+
+        max_severity = max(
+            (
+                v.get("severity", 0.0)
+                for v in state.get("violations", [])
+            ),
+            default=0.0,
+        )
+        if 0 < max_severity < 0.5:
+            return "flag"
 
         recovery_count = state.get(
             "recovery_count",
@@ -425,6 +496,49 @@ class CINT70Orchestrator:
             return "recover"
 
         return "reject"
+
+    def _flag_node(self, state: AgentState) -> AgentState:
+        """Flag a plan with low-severity violations for human review."""
+
+        max_severity = max(
+            (
+                v.get("severity", 0.0)
+                for v in state.get("violations", [])
+            ),
+            default=0.0,
+        )
+        console.print(
+            Panel.fit(
+                "[bold yellow]⚠️ PLAN FLAGGED FOR HUMAN REVIEW[/bold yellow]\n\n"
+                f"Trust Score: {state['trust_score']:.2%}\n"
+                f"Violations: {len(state.get('violations', []))}\n"
+                f"Max Severity: {max_severity:.2f}\n\n"
+                "[italic]This plan is on the boundary and requires "
+                "operator judgement.[/italic]",
+                title="CINT-70 REVIEW NOTICE",
+                border_style="yellow",
+            )
+        )
+        state["stage"] = PipelineStage.FLAGGED.value
+        self._save_evidence(state)
+
+        try:
+            self.evidence_db.log_run(
+                task_id=state.get("task_id", "unknown"),
+                command=state["command"],
+                expected_safe=state.get("expected_safe", True),
+                approved=False,
+                trust_score=state["trust_score"],
+                plan=state.get("plan", []),
+                violations=state.get("violations", []),
+                recovery_count=state.get("recovery_count", 0),
+                stage=state.get("stage", "flagged"),
+                evidence_log=state.get("evidence_log", []),
+            )
+        except Exception as e:
+            print(f"  Evidence DB write note: {e}")
+
+        return state
 
     def _approve_node(self, state: AgentState) -> AgentState:
         """Approve a validated plan."""
@@ -452,6 +566,22 @@ class CINT70Orchestrator:
         state["stage"] = PipelineStage.APPROVED.value
 
         self._save_evidence(state)
+
+        try:
+            self.evidence_db.log_run(
+                task_id=state.get("task_id", "unknown"),
+                command=state["command"],
+                expected_safe=state.get("expected_safe", True),
+                approved=True,
+                trust_score=state["trust_score"],
+                plan=state.get("plan", []),
+                violations=[],
+                recovery_count=state.get("recovery_count", 0),
+                stage=state.get("stage", "approved"),
+                evidence_log=state.get("evidence_log", []),
+            )
+        except Exception as e:
+            print(f"  Evidence DB write note: {e}")
 
         # Store successful experience
         try:
@@ -570,6 +700,22 @@ class CINT70Orchestrator:
 
         self._save_evidence(state)
 
+        try:
+            self.evidence_db.log_run(
+                task_id=state.get("task_id", "unknown"),
+                command=state["command"],
+                expected_safe=state.get("expected_safe", True),
+                approved=False,
+                trust_score=state["trust_score"],
+                plan=state.get("plan", []),
+                violations=state.get("violations", []),
+                recovery_count=state.get("recovery_count", 0),
+                stage=state.get("stage", "rejected"),
+                evidence_log=state.get("evidence_log", []),
+            )
+        except Exception as e:
+            print(f"  Evidence DB write note: {e}")
+
         return state
 
     def _extract_coordinates(
@@ -612,6 +758,14 @@ class CINT70Orchestrator:
         ) as f:
             json.dump(
                 {
+                    "task_id": state.get(
+                        "task_id",
+                        "unknown"
+                    ),
+                    "expected_safe": state.get(
+                        "expected_safe",
+                        True
+                    ),
                     "command": state["command"],
                     "plan": state["plan"],
                     "violations": state.get(
@@ -647,7 +801,9 @@ class CINT70Orchestrator:
         self,
         command: str,
         inject_failure: str = None,
-        max_recoveries: int = 3
+        max_recoveries: int = 3,
+        task_id: str = "unknown",
+        expected_safe: bool = True,
     ) -> Dict:
         """Execute a command through the full pipeline."""
 
@@ -666,6 +822,8 @@ class CINT70Orchestrator:
 
         initial_state: AgentState = {
             "command": command,
+            "task_id": task_id,
+            "expected_safe": expected_safe,
             "retrieved_docs": [],
             "graph_constraints": [],
             "plan": [],
@@ -778,7 +936,8 @@ class CINT70Orchestrator:
         self,
         command: str,
         plan: List[Dict[str, Any]],
-        inject_failure: str = None
+        inject_failure: str = None,
+        task_id: str = "unknown",
     ) -> Dict[str, Any]:
         """
         Validate a manually supplied plan without invoking the planner.
@@ -865,6 +1024,8 @@ class CINT70Orchestrator:
         # -------------------------------------------------------------
         initial_state: AgentState = {
             "command": command,
+            "task_id": task_id,
+            "expected_safe": False,
             "retrieved_docs": retrieved_docs,
             "graph_constraints": graph_constraints,
 

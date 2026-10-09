@@ -682,9 +682,12 @@ async function updateDashboard() {
   try {
     const bench = await (await fetch('/api/benchmark/latest')).json();
     if (bench.metrics) {
+      const aga = bench.metrics.aga ?? (bench.metrics.f1 != null ? bench.metrics.f1 * 100 : null);
+      const benchmarkTimestamp = bench.timestamp ? new Date(bench.timestamp).toLocaleString() : '—';
+      document.getElementById('benchmark-ts').textContent = benchmarkTimestamp;
       document.getElementById('stats').innerHTML = `
-        <div class="stat-box"><div class="label">AGA</div><div class="value">${bench.metrics.aga?.toFixed(1)}%</div></div>
-        <div class="stat-box"><div class="label">Avg Trust</div><div class="value">${(bench.metrics.avg_trust * 100)?.toFixed(0)}%</div></div>
+        <div class="stat-box"><div class="label">AGA</div><div class="value">${aga != null ? aga.toFixed(1) + '%' : '—'}</div></div>
+        <div class="stat-box"><div class="label">Avg Trust</div><div class="value">${bench.metrics.avg_trust != null ? (bench.metrics.avg_trust * 100).toFixed(0) + '%' : '—'}</div></div>
         <div class="stat-box"><div class="label">Approved</div><div class="value">${bench.metrics.approved}</div></div>
         <div class="stat-box"><div class="label">Rejected</div><div class="value">${bench.metrics.rejected}</div></div>
       `;
@@ -692,10 +695,11 @@ async function updateDashboard() {
     if (bench.results) {
       let html = '<table><tr><th>Task</th><th>Chaos</th><th>Result</th><th>Trust</th><th>Rec.</th></tr>';
       bench.results.slice(0, 10).forEach((r, i) => {
+        const trustScore = Number.isFinite(Number(r.trust_score)) ? Number(r.trust_score) : 0;
         html += `<tr data-row-index="${i}" data-task-id="${r.task_id ?? ''}">
           <td>${r.task_id}</td><td>${r.failure_mode}</td>
           <td class="${r.approved ? 'status-ok' : 'status-fail'}">${r.approved ? '✅' : '❌'}</td>
-          <td>${(r.trust_score * 100).toFixed(0)}%</td><td>${r.recoveries}</td>
+          <td>${(trustScore * 100).toFixed(0)}%</td><td>${r.recoveries ?? 0}</td>
         </tr>`;
       });
       html += '</table>';
@@ -703,7 +707,7 @@ async function updateDashboard() {
 
       // (re)wire row clicks — table is rebuilt every poll, so this must run each time
       document.querySelectorAll('#task-table tbody tr, #task-table table tr[data-row-index]').forEach(row => {
-        row.addEventListener('click', () => showTestDetails(row.dataset.taskId));
+        row.addEventListener('click', () => showTestDetails(row.dataset.taskId, row.dataset.rowIndex));
       });
     }
   } catch (_) {}
@@ -815,30 +819,34 @@ function trustBadgeClass(score) {
   return '';
 }
 
-async function showTestDetails(taskId) {
+async function showTestDetails(taskId, resultIndex = null) {
   testDetailContent.innerHTML = '<p class="empty-state">Loading run details…</p>';
   openModal(testDetailModal);
   try {
-    const evidence = await (await fetch('/api/evidence/recent?limit=1')).json();
-    if (!evidence.length) {
-      testDetailContent.innerHTML = '<p class="empty-state">No evidence logged yet.</p>';
+    if (resultIndex === null) {
+      testDetailContent.innerHTML = '<p class="empty-state">Select a benchmark row to view its details.</p>';
       return;
     }
-    const e = evidence[0];
+    const response = await fetch(`/api/benchmark/result/${encodeURIComponent(resultIndex)}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const e = await response.json();
+    if (e.error) {
+      testDetailContent.innerHTML = `<p class="empty-state">${e.error}</p>`;
+      return;
+    }
     const trustPct = ((e.trust_score ?? 0) * 100).toFixed(0);
     testDetailContent.innerHTML = `
-      ${taskId ? `<p class="empty-state" style="text-align:left;padding:0 0 10px;">Showing the most recent evidence-logged run — per-row linkage to <strong>${taskId}</strong> requires tagging each benchmark result with its evidence filename.</p>` : ''}
-      <h3>${e.command ?? 'Unnamed command'}</h3>
+      <p class="empty-state" style="text-align:left;padding:0 0 10px;">Benchmark result: <strong>${taskId ?? 'Unnamed task'}</strong> · ${e.failure_mode ?? 'unknown failure mode'}</p>
+      <h3>${e.task_id ?? 'Unnamed task'}</h3>
       <div class="run-meta">
         <span class="badge trust-badge ${trustBadgeClass(e.trust_score ?? 0)}">Trust ${trustPct}%</span>
+        <span class="badge">${e.approved ? 'Approved' : 'Rejected'}</span>
         <span class="badge recovery-badge">Recoveries: ${e.recovery_count ?? 0}</span>
       </div>
       <h4>Plan Steps</h4>
       <ol>${(e.plan ?? []).map(s => `<li>${s.action ?? s}${s.rationale ? ' — ' + s.rationale : ''}</li>`).join('') || '<li>No plan steps recorded.</li>'}</ol>
       <h4>Violations</h4>
-      ${(e.violations ?? []).length ? e.violations.map(v => `<div class="violation">${v.message ?? v}</div>`).join('') : '<p class="empty-state" style="text-align:left;padding:0;">None</p>'}
-      <h4>Evidence Log</h4>
-      <pre>${JSON.stringify(e.evidence_log ?? e, null, 2)}</pre>
+      ${(e.violation_details ?? []).length ? e.violation_details.map(v => `<div class="violation">${v.message ?? v}</div>`).join('') : '<p class="empty-state" style="text-align:left;padding:0;">None</p>'}
     `;
   } catch (_) {
     testDetailContent.innerHTML = '<p class="empty-state">Couldn\'t load run details.</p>';

@@ -15,6 +15,7 @@ class PipelineStage(Enum):
     REJECTED = "rejected"
     RECOVERING = "recovering"
     EXHAUSTED = "exhausted"
+    FLAGGED = "flagged_for_review"
 
 class ViolationType(Enum):
     JOINT_LIMIT = "joint_limit"
@@ -39,6 +40,8 @@ class ConstraintViolation:
 class AgentState(TypedDict):
     # Input
     command: str
+    task_id: str
+    expected_safe: bool
     
     # Retrieval
     retrieved_docs: List[Dict[str, Any]]
