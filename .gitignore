@@ -66,3 +66,6 @@ desktop.ini
 *.temp
 *.swp
 *.bak
+data/graph_db_runtime/data.kz
+
+data/graph_db_runtime/
