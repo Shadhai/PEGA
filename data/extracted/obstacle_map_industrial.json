@@ -1,13 +1,96 @@
 {
-  "source": "Industrial manipulator workspace (6-DOF arm, 1.5m reach)",
-  "processing": "digitized from standard industrial cell layouts",
-  "coordinate_frame": "arm base at origin, +X right, +Y forward, +Z up",
+  "source": "Industrial manipulator workcell",
+  "coordinate_frame": "arm base at origin",
   "obstacles": [
-    {"name": "conveyor_belt",     "pos_xyz": [1.0, 0.0, 0.3],  "size_m": [3.0, 0.6, 0.4], "clearance_m": 0.4, "fragile": false},
-    {"name": "worker_zone",       "pos_xyz": [-0.8, 0.8, 0.0], "size_m": [0.6, 0.6, 1.8], "clearance_m": 1.0, "fragile": true},
-    {"name": "safety_fence",      "pos_xyz": [1.5, 0.0, 0.0],  "size_m": [0.1, 3.0, 2.0], "clearance_m": 0.2, "fragile": false},
-    {"name": "tool_rack",         "pos_xyz": [0.4, -0.6, 0.6], "size_m": [0.5, 0.4, 1.2], "clearance_m": 0.3, "fragile": false},
-    {"name": "vision_camera",     "pos_xyz": [1.2, 0.5, 1.6],  "size_m": [0.2, 0.2, 0.2], "clearance_m": 0.3, "fragile": true},
-    {"name": "workpiece_fixture", "pos_xyz": [0.7, 0.0, 0.5],  "size_m": [0.4, 0.4, 0.4], "clearance_m": 0.4, "fragile": false}
+    {
+      "name": "conveyor_belt",
+      "pos_xyz": [
+        1.0,
+        0.0,
+        0.3
+      ],
+      "size_m": [
+        3.0,
+        0.6,
+        0.4
+      ],
+      "clearance_m": 0.4,
+      "fragile": false
+    },
+    {
+      "name": "worker_zone",
+      "pos_xyz": [
+        -0.8,
+        0.8,
+        0.0
+      ],
+      "size_m": [
+        0.6,
+        0.6,
+        1.8
+      ],
+      "clearance_m": 1.0,
+      "fragile": true
+    },
+    {
+      "name": "safety_fence",
+      "pos_xyz": [
+        1.5,
+        0.0,
+        0.0
+      ],
+      "size_m": [
+        0.1,
+        3.0,
+        2.0
+      ],
+      "clearance_m": 0.2,
+      "fragile": false
+    },
+    {
+      "name": "tool_rack",
+      "pos_xyz": [
+        0.4,
+        -0.6,
+        0.6
+      ],
+      "size_m": [
+        0.5,
+        0.4,
+        1.2
+      ],
+      "clearance_m": 0.3,
+      "fragile": false
+    },
+    {
+      "name": "vision_camera",
+      "pos_xyz": [
+        1.2,
+        0.5,
+        1.6
+      ],
+      "size_m": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "clearance_m": 0.3,
+      "fragile": true
+    },
+    {
+      "name": "workpiece_fixture",
+      "pos_xyz": [
+        0.7,
+        0.0,
+        0.5
+      ],
+      "size_m": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "clearance_m": 0.4,
+      "fragile": false
+    }
   ]
 }

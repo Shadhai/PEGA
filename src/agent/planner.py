@@ -24,9 +24,17 @@ class Planner:
         self.model = AutoModelForCausalLM.from_pretrained(
             "./models/qwen2.5-1.5b",
             torch_dtype=torch.float16,
-            device_map="auto",
+            device_map={"": 0},
             trust_remote_code=True
         )
+
+        actual_device = next(self.model.parameters()).device
+        print(f"  [Planner] Model loaded on: {actual_device}")
+        if actual_device.type != "cuda":
+            raise RuntimeError(
+                f"Model is on {actual_device}, not cuda. Check that the GPU "
+                f"has enough free VRAM before launching the ablation."
+            )
 
         # Replace the checkpoint's default sampling config entirely.
         # This avoids the repeated warnings from temperature/top_p/top_k

@@ -1,0 +1,83 @@
+  {
+    "source": "NASA PDS Mars 2020 MEDA - Derived from TIRS sensor data",
+    "source_url": "https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/",
+    "extraction_date": "2026-08-06",
+    "total_data_points": 3230892,
+    "mars_environment": {
+      "atmosphere": {
+        "temperature_range_c": [
+          -123.13999999999999,
+          76.83000000000004
+        ],
+        "mean_temperature_c": -52.75091741116589,
+        "variance": 724.4175714491175,
+        "description": "Mars atmospheric temperature from MEDA TIRS at Jezero Crater"
+      },
+      "surface": {
+        "temperature_range_c": [
+          -91.43999999999997,
+          8.640000000000043
+        ],
+        "mean_temperature_c": -48.78056416900773,
+        "variance": 988.1521436517511,
+        "description": "Mars surface brightness temperature from MEDA TIRS"
+      },
+      "thermal_cycling": {
+        "max_diurnal_swing_c": 199.97000000000003,
+        "typical_operational_range_c": [
+          -90,
+          10
+        ],
+        "extreme_survival_range_c": [
+          -125,
+          80
+        ]
+      }
+    },
+    "constraints_for_cint70": {
+      "robotic_arm_thermal_limits": {
+        "operating_temp_c": [
+          -100,
+          50
+        ],
+        "survival_temp_c": [
+          -130,
+          80
+        ],
+        "source": "Derived from MEDA data + NASA engineering margins"
+      },
+      "material_constraints": {
+        "aluminum_6061": {
+          "min_c": -150,
+          "max_c": 120,
+          "expansion_coeff_um_m_c": 23.1
+        },
+        "titanium_ti6al4v": {
+          "min_c": -200,
+          "max_c": 300,
+          "expansion_coeff_um_m_c": 8.6
+        },
+        "carbon_composite": {
+          "min_c": -100,
+          "max_c": 150,
+          "expansion_coeff_um_m_c": 2.1
+        }
+      },
+      "thermal_shock_risk": {
+        "max_safe_rate_c_per_min": 10.0,
+        "warning": "Rapid temperature changes during sunrise/sunset transitions"
+      }
+    },
+    "validation_rules": {
+      "check_ambient_temp": {
+        "description": "Ensure robotic arm operation within safe ambient range",
+        "min_allowed_c": -133.14,
+        "max_allowed_c": 86.83000000000004
+      },
+      "check_surface_temp": {
+        "description": "Ensure end-effector contact within material limits",
+        "min_allowed_c": -150,
+        "max_allowed_c": 120
+      }
+    }
+  }

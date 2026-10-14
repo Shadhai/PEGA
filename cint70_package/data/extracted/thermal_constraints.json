@@ -1,0 +1,29 @@
+{
+  "source": "NASA PDS Mars 2020 MEDA Bundle - TIRS Sensor",
+  "source_url": "https://pds-atmospheres.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/",
+  "extraction_date": "2026-08-06",
+  "data_points_air_temp": 1694987,
+  "data_points_ground_temp": 1535905,
+  "air_temperature_kelvin": {
+    "min": 150.01,
+    "max": 349.98,
+    "mean": 220.3990825888341,
+    "std": 26.915006435985067
+  },
+  "air_temperature_celsius": {
+    "min": -123.13999999999999,
+    "max": 76.83000000000004,
+    "mean": -52.75091741116589
+  },
+  "ground_temperature_kelvin": {
+    "min": 181.71,
+    "max": 281.79,
+    "mean": 224.36943583099224,
+    "std": 31.43488736502409
+  },
+  "ground_temperature_celsius": {
+    "min": -91.43999999999997,
+    "max": 8.640000000000043,
+    "mean": -48.78056416900773
+  }
+}

@@ -1,16 +1,46 @@
 {
-  "source": "Generic 6-DOF industrial manipulator (e.g., UR5-class)",
+  "source": "UR5-class industrial manipulator",
   "robot": "Industrial 6-DOF arm",
   "dof": 6,
   "length_m": 1.5,
   "mass_kg": 18,
   "max_payload_kg": 5,
   "joints": [
-    {"joint": "shoulder_pitch", "min_deg": -180, "max_deg": 180, "max_vel_deg_s": 180},
-    {"joint": "shoulder_yaw",   "min_deg": -180, "max_deg": 180, "max_vel_deg_s": 180},
-    {"joint": "elbow_pitch",    "min_deg": -180, "max_deg": 180, "max_vel_deg_s": 180},
-    {"joint": "wrist_roll",     "min_deg": -180, "max_deg": 180, "max_vel_deg_s": 180},
-    {"joint": "wrist_pitch",    "min_deg": -180, "max_deg": 180, "max_vel_deg_s": 180},
-    {"joint": "wrist_yaw",      "min_deg": -180, "max_deg": 180, "max_vel_deg_s": 180}
+    {
+      "joint": "shoulder_pitch",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 180
+    },
+    {
+      "joint": "shoulder_yaw",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 180
+    },
+    {
+      "joint": "elbow_pitch",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 180
+    },
+    {
+      "joint": "wrist_roll",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 180
+    },
+    {
+      "joint": "wrist_pitch",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 180
+    },
+    {
+      "joint": "wrist_yaw",
+      "min_deg": -180,
+      "max_deg": 180,
+      "max_vel_deg_s": 180
+    }
   ]
 }

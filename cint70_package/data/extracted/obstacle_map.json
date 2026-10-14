@@ -1,0 +1,16 @@
+{
+  "source": "ISS Reference Guide 2015 (local frame, arm base at Node 2)",
+  "processing": "derived from ISS external configuration diagrams",
+  "confidence": "approximate",
+  "coordinate_frame": "arm base at [0,0,0], +X starboard, +Y forward, +Z zenith",
+  "obstacles": [
+    {"name": "truss_segment_S0", "pos_xyz": [0, 0, 0], "size_m": [13.4, 5, 5], "clearance_m": 0.3, "fragile": false},
+    {"name": "solar_array_port", "pos_xyz": [-34, 0, 0], "size_m": [34, 12, 0.3], "clearance_m": 1.0, "fragile": true},
+    {"name": "solar_array_starboard", "pos_xyz": [34, 0, 0], "size_m": [34, 12, 0.3], "clearance_m": 1.0, "fragile": true},
+    {"name": "radiator_port", "pos_xyz": [-10, 0, 3], "size_m": [22, 3, 0.2], "clearance_m": 0.5, "fragile": false},
+    {"name": "radiator_starboard", "pos_xyz": [10, 0, 3], "size_m": [22, 3, 0.2], "clearance_m": 0.5, "fragile": false},
+    {"name": "node_2", "pos_xyz": [0, 2, -5], "size_m": [4.5, 4.5, 4.5], "clearance_m": 0.5, "fragile": false},
+    {"name": "columbus_module", "pos_xyz": [4, 2, -8], "size_m": [7, 4.5, 4.5], "clearance_m": 0.5, "fragile": false},
+    {"name": "kibo_module", "pos_xyz": [6, 2, -12], "size_m": [11, 4.5, 4.5], "clearance_m": 0.5, "fragile": false}
+  ]
+}

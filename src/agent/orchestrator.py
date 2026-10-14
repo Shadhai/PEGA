@@ -1,11 +1,10 @@
-
 """
 CINT-70 Orchestrator - Production Grade
 Full LangGraph state machine with recovery cycles
+Supports domains: space | industrial
 """
 
 import json
-import time
 from typing import Dict, Any, Literal, Optional, List
 from datetime import datetime
 
@@ -14,6 +13,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress
+
 from src.utils.evidence_db import EvidenceDB
 from .state import AgentState, PipelineStage, ViolationType
 from .planner import Planner
@@ -28,65 +28,60 @@ console = Console()
 
 
 class CINT70Orchestrator:
-    """Production-grade CINT-70 with LangGraph recovery cycles"""
+    """Production-grade CINT-70 with LangGraph recovery cycles."""
 
-    def __init__(self, ablation: dict = None):
-        self.ablation = ablation or {
+    def __init__(
+        self,
+        ablation: Optional[Dict[str, bool]] = None,
+        domain: Literal["space", "industrial"] = "space",
+    ):
+        if domain not in {"space", "industrial"}:
+            raise ValueError(
+                f"Unsupported domain {domain!r}; expected 'space' or 'industrial'"
+            )
+        self.domain = domain
+
+        # Always start from full defaults, then merge any ablation overrides
+        self.ablation = {
             "use_graph": True,
             "use_kinematics": True,
             "use_trajectory": True,
             "use_force_check": True,
         }
+        if ablation is not None:
+            self.ablation.update(ablation)
 
         console.print(
             "[bold cyan]╔══════════════════════════════════════╗[/bold cyan]"
         )
         console.print(
-            "[bold cyan]║   CINT-70 ASSURANCE SYSTEM v2.0      ║[/bold cyan]"
+            f"[bold cyan]║   CINT-70 {self.domain.upper():<12} v2.0   ║[/bold cyan]"
         )
         console.print(
             "[bold cyan]╚══════════════════════════════════════╝[/bold cyan]"
         )
 
         with Progress() as progress:
-            task = progress.add_task(
-                "[cyan]Loading components...",
-                total=5
-            )
+            task = progress.add_task("[cyan]Loading components...", total=5)
 
-            progress.update(
-                task,
-                description="Loading LLM..."
-            )
+            progress.update(task, description="Loading LLM...")
             self.planner = Planner()
             progress.advance(task)
 
-            progress.update(
-                task,
-                description="Loading RAG..."
-            )
+            progress.update(task, description="Loading RAG...")
             self.retriever = Retriever()
             progress.advance(task)
 
-            progress.update(
-                task,
-                description="Loading Graph DB..."
-            )
-            self.graph = ConstraintQueries()
+            progress.update(task, description="Loading Graph DB...")
+            self.graph = ConstraintQueries(domain=self.domain)
             progress.advance(task)
 
-            progress.update(
-                task,
-                description="Loading Physics..."
-            )
+            progress.update(task, description="Loading Physics...")
             self.kinematics = KinematicsValidator()
             self.constraints = ConstraintChecker()
             progress.advance(task)
 
-            progress.update(
-                task,
-                description="Loading Chaos Suite..."
-            )
+            progress.update(task, description="Loading Chaos Suite...")
             self.chaos = ChaosInjector()
             self.evidence_db = EvidenceDB()
             progress.advance(task)
@@ -97,56 +92,23 @@ class CINT70Orchestrator:
         self.workflow = self._build_graph()
         self.app = self.workflow.compile()
 
-        console.print(
-            "[bold green]✅ CINT-70 Ready![/bold green]\n"
-        )
+        console.print("[bold green]✅ CINT-70 Ready![/bold green]\n")
 
     def _build_graph(self) -> StateGraph:
         """Build the full LangGraph state machine."""
-
         workflow = StateGraph(AgentState)
 
-        # Use node_ prefix to avoid conflict with state attributes
-        workflow.add_node(
-            "node_retrieve",
-            self._retrieve_node
-        )
-        workflow.add_node(
-            "node_plan",
-            self._plan_node
-        )
-        workflow.add_node(
-            "node_validate",
-            self._validate_node
-        )
-        workflow.add_node(
-            "node_approve",
-            self._approve_node
-        )
-        workflow.add_node(
-            "node_recover",
-            self._recover_node
-        )
-        workflow.add_node(
-            "node_reject",
-            self._reject_node
-        )
-        workflow.add_node(
-            "node_flag",
-            self._flag_node
-        )
+        workflow.add_node("node_retrieve", self._retrieve_node)
+        workflow.add_node("node_plan", self._plan_node)
+        workflow.add_node("node_validate", self._validate_node)
+        workflow.add_node("node_approve", self._approve_node)
+        workflow.add_node("node_recover", self._recover_node)
+        workflow.add_node("node_reject", self._reject_node)
+        workflow.add_node("node_flag", self._flag_node)
 
         workflow.set_entry_point("node_retrieve")
-
-        workflow.add_edge(
-            "node_retrieve",
-            "node_plan"
-        )
-
-        workflow.add_edge(
-            "node_plan",
-            "node_validate"
-        )
+        workflow.add_edge("node_retrieve", "node_plan")
+        workflow.add_edge("node_plan", "node_validate")
 
         workflow.add_conditional_edges(
             "node_validate",
@@ -159,67 +121,35 @@ class CINT70Orchestrator:
             },
         )
 
-        workflow.add_edge(
-            "node_recover",
-            "node_plan"
-        )
-
-        workflow.add_edge(
-            "node_approve",
-            END
-        )
-
-        workflow.add_edge(
-            "node_reject",
-            END
-        )
-
-        workflow.add_edge(
-            "node_flag",
-            END
-        )
+        workflow.add_edge("node_recover", "node_plan")
+        workflow.add_edge("node_approve", END)
+        workflow.add_edge("node_reject", END)
+        workflow.add_edge("node_flag", END)
 
         return workflow
 
+    # ------------------------------------------------------------------
+    # Nodes
+    # ------------------------------------------------------------------
+
     def _retrieve_node(self, state: AgentState) -> AgentState:
-        """Retrieve evidence and graph constraints."""
+        console.print("[yellow]📚 PHASE 1: EVIDENCE RETRIEVAL[/yellow]")
 
-        console.print(
-            "[yellow]📚 PHASE 1: EVIDENCE RETRIEVAL[/yellow]"
-        )
-
-        docs = self.retriever.search(
-            state["command"],
-            top_k=5
-        )
-
-        constraints = self.graph.get_all_constraints(
-            state["command"]
-        )
+        docs = self.retriever.search(state["command"], top_k=5)
+        constraints = self.graph.get_all_constraints(state["command"])
 
         state["retrieved_docs"] = docs
         state["graph_constraints"] = constraints
         state["stage"] = PipelineStage.RETRIEVE.value
 
-        console.print(
-            f"   Documents retrieved: {len(docs)}"
-        )
-        console.print(
-            f"   Graph constraints: {len(constraints)}"
-        )
-
+        console.print(f"   Documents retrieved: {len(docs)}")
+        console.print(f"   Graph constraints: {len(constraints)}")
         return state
 
     def _plan_node(self, state: AgentState) -> AgentState:
-        """Generate a plan using the planner."""
+        console.print("[yellow]🧠 PHASE 2: PLAN GENERATION[/yellow]")
 
-        console.print(
-            "[yellow]🧠 PHASE 2: PLAN GENERATION[/yellow]"
-        )
-
-        # Add failure context if recovering
         command = state["command"]
-
         if state.get("failure_context"):
             command = (
                 f"{command}\n\n"
@@ -230,35 +160,24 @@ class CINT70Orchestrator:
         plan = self.planner.generate(
             command,
             state["retrieved_docs"],
-            state["graph_constraints"]
+            state["graph_constraints"],
         )
 
         state["plan"] = plan
-        state["plan_json"] = json.dumps(
-            plan,
-            indent=2
-        )
+        state["plan_json"] = json.dumps(plan, indent=2)
         state["stage"] = PipelineStage.PLAN.value
 
-        console.print(
-            f"   Generated {len(plan)} step plan"
-        )
-
+        console.print(f"   Generated {len(plan)} step plan")
         for step in plan:
             console.print(
                 f"   Step {step['step_id']}: "
                 f"{step['action']} - "
                 f"{step.get('rationale', '')[:50]}"
             )
-
         return state
 
     def _validate_node(self, state: AgentState) -> AgentState:
-        """Validate every step of the current plan."""
-
-        console.print(
-            "[yellow]🔍 PHASE 3: VALIDATION[/yellow]"
-        )
+        console.print("[yellow]🔍 PHASE 3: VALIDATION[/yellow]")
 
         self._last_move_to_position = {}
         violations = []
@@ -267,86 +186,52 @@ class CINT70Orchestrator:
         for step in state["plan"]:
             step_id = step.get("step_id", 0)
 
-            # ---------------------------------------------------------
-            # Check joint limits via GRAPH DB
-            # ---------------------------------------------------------
+            # Joint limits (graph)
             joint = step.get("joint")
             angle = step.get("target_angle_deg")
-
             if self.ablation["use_graph"] and joint and angle is not None:
-                result = self.graph.check_joint_limits(
-                    joint,
-                    float(angle)
-                )
-
+                result = self.graph.check_joint_limits(joint, float(angle))
                 if not result["passed"]:
                     all_passed = False
-
                     violations.append({
                         "step_id": step_id,
                         "type": ViolationType.JOINT_LIMIT.value,
                         "message": result["violation"],
                         "severity": result["severity"],
-                        "evidence": f"Graph DB: Joint {joint}"
+                        "evidence": f"Graph DB: Joint {joint}",
                     })
+                    console.print(f"   ❌ Step {step_id}: {result['violation']}")
 
-                    console.print(
-                        f"   ❌ Step {step_id}: "
-                        f"{result['violation']}"
-                    )
-
-            # ---------------------------------------------------------
-            # Check force limits via GRAPH DB
-            # ---------------------------------------------------------
+            # Force limits (graph)
             tool = step.get("tool_name")
             force = step.get("contact_force_n")
-
             if self.ablation["use_force_check"] and tool and force is not None:
-                result = self.graph.check_tool_force(
-                    tool,
-                    float(force)
-                )
-
+                result = self.graph.check_tool_force(tool, float(force))
                 if not result["passed"]:
                     all_passed = False
-
                     violations.append({
                         "step_id": step_id,
                         "type": ViolationType.FORCE.value,
                         "message": result["violation"],
                         "severity": result["severity"],
-                        "evidence": f"Graph DB: Tool {tool}"
+                        "evidence": f"Graph DB: Tool {tool}",
                     })
+                    console.print(f"   ❌ Step {step_id}: {result['violation']}")
 
-                    console.print(
-                        f"   ❌ Step {step_id}: "
-                        f"{result['violation']}"
-                    )
-
-            # ---------------------------------------------------------
-            # Check kinematics
-            # ---------------------------------------------------------
+            # Kinematics
             if self.ablation["use_kinematics"] and not self.kinematics.validate(step):
                 all_passed = False
-
                 violations.append({
                     "step_id": step_id,
                     "type": ViolationType.KINEMATICS.value,
                     "message": "Target position unreachable",
                     "severity": 0.9,
-                    "evidence": "Kinematics solver"
+                    "evidence": "Kinematics solver",
                 })
+                console.print(f"   ❌ Step {step_id}: Position unreachable")
 
-                console.print(
-                    f"   ❌ Step {step_id}: "
-                    "Position unreachable"
-                )
-
-            # ---------------------------------------------------------
-            # Check collision via GRAPH DB
-            # ---------------------------------------------------------
+            # Collision / trajectory (graph)
             target_coordinates = step.get("target_coordinates")
-
             if self.ablation["use_graph"] and target_coordinates:
                 end = [
                     float(target_coordinates[0]),
@@ -354,8 +239,10 @@ class CINT70Orchestrator:
                     float(target_coordinates[2]),
                 ]
 
-                # Build list of points to check
-                if self.ablation["use_trajectory"] and step.get("action") == "move_to":
+                if (
+                    self.ablation["use_trajectory"]
+                    and step.get("action") == "move_to"
+                ):
                     previous_end = self._last_move_to_position.get(-1)
                     if previous_end is None:
                         points_to_check = [end]
@@ -369,17 +256,19 @@ class CINT70Orchestrator:
                 else:
                     points_to_check = [end]
 
-                # Check every point in the list
                 for idx, wp in enumerate(points_to_check):
-                    result = self.graph.check_collision(
-                        float(wp[0]),
-                        float(wp[1]),
-                        float(wp[2]),
-                    )
+                    is_endpoint = idx == len(points_to_check) - 1
+                    if is_endpoint:
+                        result = self.graph.check_collision(
+                            float(wp[0]), float(wp[1]), float(wp[2])
+                        )
+                    else:
+                        result = self.graph.check_collision_trajectory(
+                            float(wp[0]), float(wp[1]), float(wp[2])
+                        )
 
                     if not result["passed"]:
                         all_passed = False
-
                         if step.get("action") == "move_to" and len(points_to_check) > 1:
                             message = (
                                 f"Trajectory collision at waypoint "
@@ -394,8 +283,7 @@ class CINT70Orchestrator:
                         else:
                             message = result["violation"]
                             console.print(
-                                f"   ❌ Step {step_id}: "
-                                f"{result['violation']}"
+                                f"   ❌ Step {step_id}: {result['violation']}"
                             )
 
                         violations.append({
@@ -410,31 +298,14 @@ class CINT70Orchestrator:
                 if step.get("action") == "move_to":
                     self._last_move_to_position[-1] = end
 
-            # ---------------------------------------------------------
-            # Step passed only if it has no violations
-            # ---------------------------------------------------------
-            if all(
-                v["step_id"] != step_id
-                for v in violations
-            ):
-                console.print(
-                    f"   ✅ Step {step_id}: "
-                    "All checks passed"
-                )
+            # Step passed?
+            if all(v["step_id"] != step_id for v in violations):
+                console.print(f"   ✅ Step {step_id}: All checks passed")
 
-        # -------------------------------------------------------------
-        # Calculate trust score based on real violations
-        # -------------------------------------------------------------
+        # Trust score
         if violations:
-            avg_severity = (
-                sum(v["severity"] for v in violations)
-                / len(violations)
-            )
-
-            trust_score = max(
-                0,
-                1.0 - avg_severity
-            )
+            avg_severity = sum(v["severity"] for v in violations) / len(violations)
+            trust_score = max(0.0, 1.0 - avg_severity)
         else:
             trust_score = 1.0
 
@@ -443,54 +314,34 @@ class CINT70Orchestrator:
         state["trust_score"] = trust_score
         state["stage"] = PipelineStage.VALIDATE.value
 
-        # -------------------------------------------------------------
-        # Log evidence
-        # -------------------------------------------------------------
-        state["evidence_log"] = (
-            state.get("evidence_log", [])
-            + [{
-                "timestamp": datetime.now().isoformat(),
-                "command": state["command"],
-                "plan_steps": len(state["plan"]),
-                "violations": len(violations),
-                "trust_score": trust_score,
-                "recovery_attempt": state.get(
-                    "recovery_count",
-                    0
-                )
-            }]
-        )
+        state["evidence_log"] = state.get("evidence_log", []) + [{
+            "timestamp": datetime.now().isoformat(),
+            "command": state["command"],
+            "plan_steps": len(state["plan"]),
+            "violations": len(violations),
+            "trust_score": trust_score,
+            "recovery_attempt": state.get("recovery_count", 0),
+        }]
 
         return state
 
     def _route_after_validation(
-        self,
-        state: AgentState
+        self, state: AgentState
     ) -> Literal["approve", "recover", "reject", "flag"]:
-        """Decision logic after validation."""
-
         if state["all_checks_passed"]:
             return "approve"
 
         max_severity = max(
-            (
-                v.get("severity", 0.0)
-                for v in state.get("violations", [])
-            ),
+            (v.get("severity", 0.0) for v in state.get("violations", [])),
             default=0.0,
         )
-        if 0 < max_severity < 0.5:
+
+        # Consistent with paper / HITL section (threshold = 0.75)
+        if 0 < max_severity < 0.75:
             return "flag"
 
-        recovery_count = state.get(
-            "recovery_count",
-            0
-        )
-
-        max_recoveries = state.get(
-            "max_recoveries",
-            3
-        )
+        recovery_count = state.get("recovery_count", 0)
+        max_recoveries = state.get("max_recoveries", 3)
 
         if recovery_count < max_recoveries:
             return "recover"
@@ -498,13 +349,8 @@ class CINT70Orchestrator:
         return "reject"
 
     def _flag_node(self, state: AgentState) -> AgentState:
-        """Flag a plan with low-severity violations for human review."""
-
         max_severity = max(
-            (
-                v.get("severity", 0.0)
-                for v in state.get("violations", [])
-            ),
+            (v.get("severity", 0.0) for v in state.get("violations", [])),
             default=0.0,
         )
         console.print(
@@ -541,30 +387,21 @@ class CINT70Orchestrator:
         return state
 
     def _approve_node(self, state: AgentState) -> AgentState:
-        """Approve a validated plan."""
-
         console.print(
             Panel.fit(
-                f"[bold green]✅ PLAN APPROVED "
-                f"FOR EXECUTION[/bold green]\n\n"
-                f"Trust Score: "
-                f"{state['trust_score']:.2%}\n"
-                f"Steps Validated: "
-                f"{len(state['plan'])}\n"
+                f"[bold green]✅ PLAN APPROVED FOR EXECUTION[/bold green]\n\n"
+                f"Trust Score: {state['trust_score']:.2%}\n"
+                f"Steps Validated: {len(state['plan'])}\n"
                 f"Violations: 0\n"
-                f"Recovery Attempts: "
-                f"{state.get('recovery_count', 0)}\n"
-                f"Evidence Log: "
-                f"{len(state.get('evidence_log', []))} entries\n\n"
-                "[italic]This decision is traceable. "
-                "Evidence trail saved.[/italic]",
+                f"Recovery Attempts: {state.get('recovery_count', 0)}\n"
+                f"Evidence Log: {len(state.get('evidence_log', []))} entries\n\n"
+                "[italic]This decision is traceable. Evidence trail saved.[/italic]",
                 title="CINT-70 ASSURANCE CERTIFICATE",
-                border_style="green"
+                border_style="green",
             )
         )
 
         state["stage"] = PipelineStage.APPROVED.value
-
         self._save_evidence(state)
 
         try:
@@ -583,7 +420,6 @@ class CINT70Orchestrator:
         except Exception as e:
             print(f"  Evidence DB write note: {e}")
 
-        # Store successful experience
         try:
             self.retriever.memory.store_experience(
                 command=state["command"],
@@ -591,112 +427,61 @@ class CINT70Orchestrator:
                 outcome="APPROVED",
                 trust_score=state["trust_score"],
                 violations=[],
-                recovery_count=state.get(
-                    "recovery_count",
-                    0
-                ),
-                safe_coords=self._extract_coordinates(
-                    state["plan"]
-                )
+                recovery_count=state.get("recovery_count", 0),
+                safe_coords=self._extract_coordinates(state["plan"]),
             )
-
         except Exception as e:
-            print(
-                f"  Memory store note: {e}"
-            )
+            print(f"  Memory store note: {e}")
 
         return state
 
     def _recover_node(self, state: AgentState) -> AgentState:
-        """Prepare a failed plan for planner-based recovery."""
-
-        state["recovery_count"] = (
-            state.get("recovery_count", 0) + 1
-        )
+        state["recovery_count"] = state.get("recovery_count", 0) + 1
 
         console.print(
             f"[orange1]🔄 RECOVERY ATTEMPT "
-            f"{state['recovery_count']}/"
-            f"{state.get('max_recoveries', 3)}"
+            f"{state['recovery_count']}/{state.get('max_recoveries', 3)}"
             f"[/orange1]"
         )
 
-        # Build failure context from violations
-        failure_msgs = []
+        failure_msgs = [
+            f"Step {v['step_id']}: {v['message']} [Source: {v['evidence']}]"
+            for v in state.get("violations", [])
+        ]
+        state["failure_context"] = "\n".join(failure_msgs)
+        state["stage"] = PipelineStage.RECOVERING.value
 
-        for v in state.get("violations", []):
-            failure_msgs.append(
-                f"Step {v['step_id']}: "
-                f"{v['message']} "
-                f"[Source: {v['evidence']}]"
-            )
-
-        state["failure_context"] = (
-            "\n".join(failure_msgs)
-        )
-
-        state["stage"] = (
-            PipelineStage.RECOVERING.value
-        )
-
-        console.print(
-            "   Failures detected:"
-        )
-
+        console.print("   Failures detected:")
         for msg in failure_msgs:
-            console.print(
-                f"   • {msg}"
-            )
-
-        console.print(
-            "   Regenerating plan with "
-            "failure context..."
-        )
-
+            console.print(f"   • {msg}")
+        console.print("   Regenerating plan with failure context...")
         return state
 
     def _reject_node(self, state: AgentState) -> AgentState:
-        """Reject a plan that cannot satisfy safety constraints."""
-
         console.print(
             Panel.fit(
                 f"[bold red]❌ PLAN REJECTED[/bold red]\n\n"
-                f"Max recovery attempts "
-                f"({state.get('max_recoveries', 3)}) "
-                f"exceeded.\n"
-                f"Violations: "
-                f"{len(state.get('violations', []))}\n\n"
+                f"Max recovery attempts ({state.get('max_recoveries', 3)}) exceeded.\n"
+                f"Violations: {len(state.get('violations', []))}\n\n"
                 f"Manual intervention required.",
                 title="CINT-70 REJECTION NOTICE",
-                border_style="red"
+                border_style="red",
             )
         )
 
-        state["stage"] = (
-            PipelineStage.EXHAUSTED.value
-        )
+        state["stage"] = PipelineStage.EXHAUSTED.value
 
-        # Store failed experience
         try:
             self.retriever.memory.store_experience(
                 command=state["command"],
                 plan=state["plan"],
                 outcome="REJECTED",
                 trust_score=state["trust_score"],
-                violations=state.get(
-                    "violations",
-                    []
-                ),
-                recovery_count=state.get(
-                    "recovery_count",
-                    0
-                )
+                violations=state.get("violations", []),
+                recovery_count=state.get("recovery_count", 0),
             )
-
         except Exception as e:
-            print(
-                f"  Memory store note: {e}"
-            )
+            print(f"  Memory store note: {e}")
 
         self._save_evidence(state)
 
@@ -718,84 +503,44 @@ class CINT70Orchestrator:
 
         return state
 
-    def _extract_coordinates(
-        self,
-        plan: List[Dict]
-    ) -> Optional[List]:
-        """Extract safe coordinates from a plan."""
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
+    def _extract_coordinates(self, plan: List[Dict]) -> Optional[List]:
         for step in plan:
-            if (
-                "target_coordinates" in step
-                and step["target_coordinates"]
-            ):
+            if "target_coordinates" in step and step["target_coordinates"]:
                 return step["target_coordinates"]
-
         return None
 
-    def _save_evidence(
-        self,
-        state: AgentState
-    ):
-        """Save evidence trail to disk."""
-
+    def _save_evidence(self, state: AgentState):
         import os
-
-        os.makedirs(
-            "logs/evidence",
-            exist_ok=True
-        )
-
+        os.makedirs("logs/evidence", exist_ok=True)
         filename = (
             "logs/evidence/run_"
-            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            ".json"
+            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         )
-
-        with open(
-            filename,
-            "w"
-        ) as f:
+        with open(filename, "w") as f:
             json.dump(
                 {
-                    "task_id": state.get(
-                        "task_id",
-                        "unknown"
-                    ),
-                    "expected_safe": state.get(
-                        "expected_safe",
-                        True
-                    ),
+                    "task_id": state.get("task_id", "unknown"),
+                    "expected_safe": state.get("expected_safe", True),
                     "command": state["command"],
                     "plan": state["plan"],
-                    "violations": state.get(
-                        "violations",
-                        []
-                    ),
-                    "trust_score": state[
-                        "trust_score"
-                    ],
+                    "violations": state.get("violations", []),
+                    "trust_score": state["trust_score"],
                     "stage": state["stage"],
-                    "recovery_count": state.get(
-                        "recovery_count",
-                        0
-                    ),
-                    "evidence_log": state.get(
-                        "evidence_log",
-                        []
-                    )
+                    "recovery_count": state.get("recovery_count", 0),
+                    "evidence_log": state.get("evidence_log", []),
                 },
                 f,
-                indent=2
+                indent=2,
             )
+        console.print(f"   📁 Evidence saved: {filename}")
 
-        console.print(
-            f"   📁 Evidence saved: {filename}"
-        )
-
-    # =================================================================
-    # NORMAL EXECUTION
-    # =================================================================
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
     def execute(
         self,
@@ -806,19 +551,10 @@ class CINT70Orchestrator:
         expected_safe: bool = True,
     ) -> Dict:
         """Execute a command through the full pipeline."""
-
-        # Inject chaos if requested
         chaos_info = None
-
         if inject_failure:
-            chaos_info = self.chaos.inject(
-                inject_failure
-            )
-
-            console.print(
-                f"[red]💥 CHAOS INJECTED: "
-                f"{chaos_info['message']}[/red]"
-            )
+            chaos_info = self.chaos.inject(inject_failure)
+            console.print(f"[red]💥 CHAOS INJECTED: {chaos_info['message']}[/red]")
 
         initial_state: AgentState = {
             "command": command,
@@ -840,97 +576,27 @@ class CINT70Orchestrator:
         }
 
         try:
-            final_state = self.app.invoke(
-                initial_state,
-                {"recursion_limit": 50}
-            )
+            final_state = self.app.invoke(initial_state, {"recursion_limit": 50})
 
-            # Display results table
-            table = Table(
-                title=f"RESULTS: {command[:50]}..."
-            )
-
-            table.add_column(
-                "Metric",
-                style="cyan"
-            )
-
-            table.add_column(
-                "Value",
-                style="bold"
-            )
-
+            table = Table(title=f"RESULTS: {command[:50]}...")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="bold")
             table.add_row(
                 "Status",
-                (
-                    "✅ APPROVED"
-                    if final_state["all_checks_passed"]
-                    else "❌ REJECTED"
-                )
+                "✅ APPROVED" if final_state["all_checks_passed"] else "❌ REJECTED",
             )
-
-            table.add_row(
-                "Trust Score",
-                f"{final_state['trust_score']:.2%}"
-            )
-
-            table.add_row(
-                "Steps",
-                str(
-                    len(
-                        final_state.get(
-                            "plan",
-                            []
-                        )
-                    )
-                )
-            )
-
-            table.add_row(
-                "Violations",
-                str(
-                    len(
-                        final_state.get(
-                            "violations",
-                            []
-                        )
-                    )
-                )
-            )
-
-            table.add_row(
-                "Recoveries",
-                str(
-                    final_state.get(
-                        "recovery_count",
-                        0
-                    )
-                )
-            )
-
+            table.add_row("Trust Score", f"{final_state['trust_score']:.2%}")
+            table.add_row("Steps", str(len(final_state.get("plan", []))))
+            table.add_row("Violations", str(len(final_state.get("violations", []))))
+            table.add_row("Recoveries", str(final_state.get("recovery_count", 0)))
             if chaos_info:
-                table.add_row(
-                    "Chaos",
-                    chaos_info["type"]
-                )
-
+                table.add_row("Chaos", chaos_info["type"])
             console.print(table)
 
             return final_state
-
         except Exception as e:
-            console.print(
-                f"[red]❌ Pipeline error: "
-                f"{str(e)}[/red]"
-            )
-
-            return {
-                "error": str(e)
-            }
-
-    # =================================================================
-    # CUSTOM PLAN EXECUTION - ADVERSARIAL TESTING
-    # =================================================================
+            console.print(f"[red]❌ Pipeline error: {str(e)}[/red]")
+            return {"error": str(e)}
 
     def execute_custom_plan(
         self,
@@ -941,127 +607,44 @@ class CINT70Orchestrator:
     ) -> Dict[str, Any]:
         """
         Validate a manually supplied plan without invoking the planner.
-
-        This method is intended for adversarial/unsafe benchmark tests.
-
-        Unlike execute(), this method deliberately bypasses the normal
-        LangGraph retrieve -> plan -> validate flow because the planner
-        must NOT be allowed to replace the manually supplied unsafe plan.
-
-        The supplied plan is sent directly to the validator.
-
-        Args:
-            command:
-                Original task command.
-
-            plan:
-                Manually supplied plan to validate.
-
-            inject_failure:
-                Optional chaos injection. This is supported for API
-                compatibility, but custom-plan tests normally do not
-                require it.
-
-        Returns:
-            Final AgentState containing the validation result.
+        Used for adversarial / unsafe benchmark tasks.
         """
-
         console.print(
-            "[bold magenta]"
-            "🧪 CUSTOM PLAN / ADVERSARIAL VALIDATION"
-            "[/bold magenta]"
+            "[bold magenta]🧪 CUSTOM PLAN / ADVERSARIAL VALIDATION[/bold magenta]"
         )
 
-        # -------------------------------------------------------------
-        # Optional chaos injection
-        # -------------------------------------------------------------
         chaos_info = None
-
         if inject_failure:
-            chaos_info = self.chaos.inject(
-                inject_failure
-            )
+            chaos_info = self.chaos.inject(inject_failure)
+            console.print(f"[red]💥 CHAOS INJECTED: {chaos_info['message']}[/red]")
 
-            console.print(
-                f"[red]💥 CHAOS INJECTED: "
-                f"{chaos_info['message']}[/red]"
-            )
-
-        # -------------------------------------------------------------
-        # Retrieve evidence and constraints.
-        #
-        # We perform retrieval here so the custom-plan path still has
-        # the same contextual information available to validation.
-        #
-        # IMPORTANT:
-        # We do NOT call self.app.invoke(), because the compiled graph
-        # always starts at node_retrieve -> node_plan.
-        # -------------------------------------------------------------
         try:
-            retrieved_docs = self.retriever.search(
-                command,
-                top_k=5
-            )
-
-            graph_constraints = (
-                self.graph.get_all_constraints(
-                    command
-                )
-            )
-
+            retrieved_docs = self.retriever.search(command, top_k=5)
+            graph_constraints = self.graph.get_all_constraints(command)
         except Exception as e:
-            console.print(
-                f"[red]❌ Custom-plan retrieval error: "
-                f"{str(e)}[/red]"
-            )
+            console.print(f"[red]❌ Custom-plan retrieval error: {str(e)}[/red]")
+            return {"error": str(e)}
 
-            return {
-                "error": str(e)
-            }
-
-        # -------------------------------------------------------------
-        # Build state with the manually supplied plan.
-        # -------------------------------------------------------------
         initial_state: AgentState = {
             "command": command,
             "task_id": task_id,
             "expected_safe": False,
             "retrieved_docs": retrieved_docs,
             "graph_constraints": graph_constraints,
-
-            # IMPORTANT:
-            # This is the adversarial plan. The planner is never called.
             "plan": plan,
-            "plan_json": json.dumps(
-                plan,
-                indent=2
-            ),
-
+            "plan_json": json.dumps(plan, indent=2),
             "violations": [],
             "all_checks_passed": False,
             "trust_score": 0.0,
-
-            # No recovery is performed for this adversarial test.
-            #
-            # If recovery were enabled, the system could call the
-            # planner and replace the deliberately unsafe plan.
             "recovery_count": 0,
-            "max_recoveries": 0,
+            "max_recoveries": 0,          # no recovery for adversarial tests
             "failure_context": "",
-
             "stage": PipelineStage.VALIDATE.value,
             "evidence_log": [],
             "messages": [],
         }
 
-        # -------------------------------------------------------------
-        # Display the injected plan.
-        # -------------------------------------------------------------
-        console.print(
-            f"   Custom plan contains "
-            f"{len(plan)} step(s)"
-        )
-
+        console.print(f"   Custom plan contains {len(plan)} step(s)")
         for step in plan:
             console.print(
                 f"   Step {step.get('step_id', 0)}: "
@@ -1069,119 +652,37 @@ class CINT70Orchestrator:
                 f"{step.get('rationale', '')[:60]}"
             )
 
-        # -------------------------------------------------------------
-        # DIRECT VALIDATION
-        #
-        # This is the critical part of the adversarial benchmark.
-        #
-        # _validate_node() is called directly so the manually supplied
-        # unsafe plan cannot be replaced by the planner.
-        # -------------------------------------------------------------
         try:
-            final_state = self._validate_node(
-                initial_state
-            )
-
+            final_state = self._validate_node(initial_state)
         except Exception as e:
-            console.print(
-                f"[red]❌ Custom-plan validation error: "
-                f"{str(e)}[/red]"
-            )
+            console.print(f"[red]❌ Custom-plan validation error: {str(e)}[/red]")
+            return {"error": str(e)}
 
-            return {
-                "error": str(e)
-            }
-
-        # -------------------------------------------------------------
-        # Custom-plan decision
-        #
-        # For adversarial tests:
-        #
-        #   no violations -> approve
-        #   violations    -> reject
-        #
-        # We intentionally do not enter the recovery loop.
-        # -------------------------------------------------------------
         if final_state["all_checks_passed"]:
-            final_state = self._approve_node(
-                final_state
-            )
+            final_state = self._approve_node(final_state)
         else:
-            final_state = self._reject_node(
-                final_state
+            max_sev = max(
+                (v.get("severity", 0.0) for v in final_state.get("violations", [])),
+                default=0.0,
             )
+            if 0 < max_sev < 0.75:
+                final_state = self._flag_node(final_state)
+            else:
+                final_state = self._reject_node(final_state)
 
-        # -------------------------------------------------------------
-        # Display custom-plan results.
-        # -------------------------------------------------------------
-        table = Table(
-            title=f"ADVERSARIAL RESULTS: {command[:50]}..."
-        )
-
-        table.add_column(
-            "Metric",
-            style="cyan"
-        )
-
-        table.add_column(
-            "Value",
-            style="bold"
-        )
-
+        table = Table(title=f"ADVERSARIAL RESULTS: {command[:50]}...")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="bold")
         table.add_row(
             "Status",
-            (
-                "⚠️ APPROVED"
-                if final_state["all_checks_passed"]
-                else "🛑 REJECTED"
-            )
+            "⚠️ APPROVED" if final_state["all_checks_passed"] else "🛑 REJECTED",
         )
-
-        table.add_row(
-            "Trust Score",
-            f"{final_state['trust_score']:.2%}"
-        )
-
-        table.add_row(
-            "Steps",
-            str(
-                len(
-                    final_state.get(
-                        "plan",
-                        []
-                    )
-                )
-            )
-        )
-
-        table.add_row(
-            "Violations",
-            str(
-                len(
-                    final_state.get(
-                        "violations",
-                        []
-                    )
-                )
-            )
-        )
-
-        table.add_row(
-            "Recoveries",
-            str(
-                final_state.get(
-                    "recovery_count",
-                    0
-                )
-            )
-        )
-
+        table.add_row("Trust Score", f"{final_state['trust_score']:.2%}")
+        table.add_row("Steps", str(len(final_state.get("plan", []))))
+        table.add_row("Violations", str(len(final_state.get("violations", []))))
+        table.add_row("Recoveries", str(final_state.get("recovery_count", 0)))
         if chaos_info:
-            table.add_row(
-                "Chaos",
-                chaos_info["type"]
-            )
-
+            table.add_row("Chaos", chaos_info["type"])
         console.print(table)
 
         return final_state

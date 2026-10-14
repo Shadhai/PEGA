@@ -22,9 +22,29 @@ def get_graph():
 class ConstraintQueries:
     def __init__(
         self,
-        db_path: str = "data/graph_db_runtime",
+        db_path: str = "data/graph_db.db",
         domain: str = "space",
     ):
+        from pathlib import Path
+        import shutil
+
+        # KuzuDB 0.4+ expects a file path, not a directory.
+        for p in [
+            db_path,
+            db_path + ".wal",
+            db_path + ".lock",
+            "data/graph_db_runtime",
+            "data/graph_db",
+        ]:
+            if os.path.isdir(p):
+                shutil.rmtree(p, ignore_errors=True)
+            elif os.path.isfile(p):
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
         self.domain = domain
         if domain == "industrial":
             self.joint_file = "data/extracted/joint_limits_industrial.json"
@@ -35,7 +55,6 @@ class ConstraintQueries:
             self.obstacle_file = "data/extracted/obstacle_map.json"
             self.tool_file = "data/extracted/tool_catalog.json"
 
-        os.makedirs(db_path, exist_ok=True)
 
         self.db = kuzu.Database(
             db_path,
@@ -258,6 +277,39 @@ class ConstraintQueries:
             f"{obstacle_count} obstacles, "
             f"{tool_count} tools"
         )
+
+
+    def check_collision_trajectory(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        margin_scale: float = 0.4,
+    ) -> Dict[str, Any]:
+        """Collision check for intermediate trajectory waypoints."""
+        try:
+            result = self.conn.execute(
+                "MATCH (o:Obstacle) "
+                "RETURN o.name, o.x, o.y, o.z, o.radius, o.clearance"
+            )
+            while result.has_next():
+                row = result.get_next()
+                name, ox, oy, oz, radius, clearance = row
+                distance = ((x - ox) ** 2 + (y - oy) ** 2 + (z - oz) ** 2) ** 0.5
+                safe_distance = radius + clearance * margin_scale
+                if distance < safe_distance:
+                    return {
+                        "passed": False,
+                        "violation": (
+                            f"Trajectory collision with {name} "
+                            f"(dist: {distance:.2f}m, "
+                            f"waypoint_need: {safe_distance:.2f}m)"
+                        ),
+                        "severity": 0.7,
+                    }
+            return {"passed": True, "violation": None, "severity": 0.0}
+        except Exception as e:
+            return {"passed": False, "violation": str(e), "severity": 0.5}
 
     def check_joint_limits(
         self,

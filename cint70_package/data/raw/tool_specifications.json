@@ -1,0 +1,47 @@
+[
+  {
+    "tool_name": "thermal_applicator",
+    "weight_kg": 2.3,
+    "length_m": 0.15,
+    "power_draw_w": 50,
+    "max_contact_force_n": 15,
+    "operating_temp_c_min": -150,
+    "operating_temp_c_max": 120,
+    "holster_id": "H-1",
+    "backup_holster": "H-2"
+  },
+  {
+    "tool_name": "inspection_camera",
+    "weight_kg": 1.8,
+    "length_m": 0.12,
+    "power_draw_w": 25,
+    "max_contact_force_n": 5,
+    "operating_temp_c_min": -100,
+    "operating_temp_c_max": 80,
+    "holster_id": "H-3",
+    "backup_holster": "H-4"
+  },
+  {
+    "tool_name": "torque_wrench",
+    "weight_kg": 3.1,
+    "length_m": 0.2,
+    "power_draw_w": 80,
+    "max_contact_force_n": 30,
+    "max_torque_nm": 15,
+    "operating_temp_c_min": -200,
+    "operating_temp_c_max": 150,
+    "holster_id": "H-5",
+    "backup_holster": "H-6"
+  },
+  {
+    "tool_name": "sample_scoop",
+    "weight_kg": 1.5,
+    "length_m": 0.18,
+    "power_draw_w": 10,
+    "max_contact_force_n": 20,
+    "operating_temp_c_min": -100,
+    "operating_temp_c_max": 100,
+    "holster_id": "H-7",
+    "backup_holster": "H-8"
+  }
+]

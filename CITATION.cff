@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite:"
+title: "Plan-Agnostic Graph-Grounded Action Assurance for Embodied Agents"
+authors:
+  - family-names: "Your Last Name"
+    given-names: "Your First Name"
+version: 1.0.0
+date-released: "2026-10-09"
+license: MIT

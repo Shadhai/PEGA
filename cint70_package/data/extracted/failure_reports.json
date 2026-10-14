@@ -1,0 +1,94 @@
+{
+  "source": "NASA Lessons Learned Information System (LLIS)",
+  "extraction": "manual curation from public LLIS search",
+  "categories": [
+    "mechanical",
+    "sensor",
+    "communication",
+    "power",
+    "software",
+    "environmental"
+  ],
+  "reports": [
+    {
+      "id": "LLIS-001",
+      "title": "SSRMS Joint 3 Anomaly",
+      "mission": "STS-123",
+      "category": "mechanical",
+      "symptom": "Joint 3 exhibited uncommanded motion during payload handoff",
+      "root_cause": "Bearing preload degradation after 12 years in orbit",
+      "recovery": "Switched to redundant drive, reduced payload capacity by 20%",
+      "lesson": "Implement regular joint lubrication schedules beyond original design life"
+    },
+    {
+      "id": "LLIS-002",
+      "title": "Latching End Effector Stuck",
+      "mission": "ISS-45",
+      "category": "mechanical",
+      "symptom": "LEE snares failed to close on payload grapple fixture",
+      "root_cause": "Cold welding of snare cables due to vacuum exposure",
+      "recovery": "Thermal cycling via sun exposure, multiple retract/extend cycles",
+      "lesson": "Apply anti-cold-welding coating to LEE snares"
+    },
+    {
+      "id": "LLIS-003",
+      "title": "Camera Glare During EVA",
+      "mission": "ISS-52",
+      "category": "sensor",
+      "symptom": "All external cameras saturated during orbital sunrise",
+      "root_cause": "Insufficient dynamic range in camera sensors",
+      "recovery": "Paused robotic operations for 90 seconds until orbital sunset",
+      "lesson": "Install auto-exposure cameras with wider dynamic range"
+    },
+    {
+      "id": "LLIS-004",
+      "title": "Signal Latency Spike",
+      "mission": "Mars 2020",
+      "category": "communication",
+      "symptom": "Command latency increased from 12min to 45min during solar conjunction",
+      "root_cause": "Signal path through solar corona",
+      "recovery": "Switched to pre-loaded command sequences, disabled real-time control",
+      "lesson": "Plan autonomous operations windows during conjunction periods"
+    },
+    {
+      "id": "LLIS-005",
+      "title": "Tool Power Failure",
+      "mission": "ISS-60",
+      "category": "power",
+      "symptom": "Pistol Grip Tool lost power during critical bolt removal",
+      "root_cause": "Battery thermal protection triggered by prolonged use",
+      "recovery": "Switched to manual ratchet wrench, added 47 minutes to EVA",
+      "lesson": "Always carry manual backup tools for critical fasteners"
+    },
+    {
+      "id": "LLIS-006",
+      "title": "Dextre Software State Error",
+      "mission": "ISS-38",
+      "category": "software",
+      "symptom": "SPDM entered safe mode during fine manipulation task",
+      "root_cause": "Race condition in force-moment accommodation firmware",
+      "recovery": "Ground-commanded full system reboot, reloaded parameters",
+      "lesson": "Add watchdog timer for force control loops"
+    },
+    {
+      "id": "LLIS-007",
+      "title": "Solar Array Position Drift",
+      "mission": "ISS-25",
+      "category": "environmental",
+      "symptom": "Port solar array position drifted 0.5m from expected during thermal cycling",
+      "root_cause": "Uneven thermal expansion across array mast",
+      "recovery": "Updated keep-out zone model, delayed operations until thermal equilibrium",
+      "lesson": "Include thermal deformation in operational planning models"
+    },
+    {
+      "id": "LLIS-008",
+      "title": "Micrometeoroid Impact on Radiator",
+      "mission": "ISS-70",
+      "category": "environmental",
+      "symptom": "Small leak detected in port radiator panel",
+      "root_cause": "Micrometeoroid impact during Leonid meteor shower",
+      "recovery": "Isolated damaged panel, rerouted cooling loops, scheduled EVA repair",
+      "lesson": "Plan robotic inspections after meteor shower events"
+    }
+  ]
+}
