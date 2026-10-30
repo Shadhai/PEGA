@@ -53,14 +53,12 @@ COPY --chown=appuser:appuser src ./src
 COPY --chown=appuser:appuser webapp ./webapp
 COPY --chown=appuser:appuser data/extracted ./data/extracted
 COPY --chown=appuser:appuser data/experience.db ./data/experience.db
-COPY --chown=appuser:appuser logs ./logs
 
 RUN mkdir -p /app/data/graph_db \
     /app/logs/evidence \
-    /app/logs/benchmarks && \
-    chown appuser:appuser /app/data \
-    /app/data/graph_db /app/logs \
-    /app/logs/evidence /app/logs/benchmarks
+    /app/logs/benchmarks \
+    /tmp/huggingface && \
+    chown -R appuser:appuser /app/data /app/logs /tmp/huggingface
 
 USER appuser
 
