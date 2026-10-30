@@ -54,7 +54,7 @@ COPY --chown=appuser:appuser webapp ./webapp
 COPY --chown=appuser:appuser data/extracted ./data/extracted
 COPY --chown=appuser:appuser data/experience.db ./data/experience.db
 COPY --chown=appuser:appuser models/minilm ./models/minilm
-
+COPY --chown=appuser:appuser logs/benchmarks ./logs/benchmarks
 RUN mkdir -p /app/data/graph_db \
     /app/logs/evidence \
     /app/logs/benchmarks \
