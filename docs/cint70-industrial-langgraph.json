@@ -1,0 +1,172 @@
+{
+  "nodes": [
+    {
+      "id": "__start__",
+      "type": "schema",
+      "data": "__start__"
+    },
+    {
+      "id": "__end__",
+      "type": "schema",
+      "data": "__end__"
+    },
+    {
+      "id": "node_retrieve",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_retrieve_node"
+      }
+    },
+    {
+      "id": "node_plan",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_plan_node"
+      }
+    },
+    {
+      "id": "node_validate",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_validate_node"
+      }
+    },
+    {
+      "id": "node_approve",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_approve_node"
+      }
+    },
+    {
+      "id": "node_recover",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_recover_node"
+      }
+    },
+    {
+      "id": "node_reject",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_reject_node"
+      }
+    },
+    {
+      "id": "node_flag",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_flag_node"
+      }
+    },
+    {
+      "id": "node_validate__route_after_validation",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langchain_core",
+          "runnables",
+          "base",
+          "RunnableLambda"
+        ],
+        "name": "_route_after_validation"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_approve",
+      "target": "__end__"
+    },
+    {
+      "source": "node_plan",
+      "target": "node_validate"
+    },
+    {
+      "source": "node_reject",
+      "target": "__end__"
+    },
+    {
+      "source": "node_flag",
+      "target": "__end__"
+    },
+    {
+      "source": "node_recover",
+      "target": "node_plan"
+    },
+    {
+      "source": "node_retrieve",
+      "target": "node_plan"
+    },
+    {
+      "source": "node_validate",
+      "target": "node_validate__route_after_validation"
+    },
+    {
+      "source": "node_validate__route_after_validation",
+      "target": "node_approve",
+      "data": "approve"
+    },
+    {
+      "source": "node_validate__route_after_validation",
+      "target": "node_recover",
+      "data": "recover"
+    },
+    {
+      "source": "node_validate__route_after_validation",
+      "target": "node_reject",
+      "data": "reject"
+    },
+    {
+      "source": "node_validate__route_after_validation",
+      "target": "node_flag",
+      "data": "flag"
+    },
+    {
+      "source": "__start__",
+      "target": "node_retrieve"
+    }
+  ]
+}

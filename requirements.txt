@@ -27,3 +27,64 @@ tqdm==4.66.1
 # Web dashboard
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
+
+
+# **Remaining work after Phase 1 (priority order)**
+
+# Industrial full eval + ablations are **done**. Focus on code/project strength first, paper second.
+
+# ---
+
+# ### Tier 1 — Do now (highest impact)
+
+# | # | Task | Why | Effort |
+# |---|------|-----|--------|
+# | **1** | **Persist notebook fixes into the package** | `max_reach=1.8`, `clearance_m=0.90` for worker_zone, plan-key loading (`adversarial_plan`), Kuzu path fix — currently only live in the notebook | 1–2 h |
+# | **2** | **Domain-aware kinematics** | Industrial uses Euclidean reach; space keeps DH. Put this in `KinematicsValidator` or orchestrator properly | 1 h |
+# | **3** | **Unified benchmark runner** | Single `run_benchmark.py` with `--domain industrial\|space\|both`, full metrics (UAR, F1, errors), no silent drops | 2 h |
+# | **4** | **Save final result JSONs** | You already have them under `logs/benchmarks/` — zip and keep as ground truth for paper | 15 min |
+
+# ---
+
+# ### Tier 2 — Stronger project (next)
+
+# | # | Task | Why | Effort |
+# |---|------|-----|--------|
+# | **5** | **Per-hazard breakdown** | Report recall by hazard (collision, joint, force, reach) for industrial + aerospace | 1–2 h |
+# | **6** | **Basic test suite** | Safe approve / unsafe reject / empty plan / domain switch — signals production quality | 2 h |
+# | **7** | **README update** | How to run industrial 150, metrics definitions, known limits | 1 h |
+
+# ---
+
+# ### Tier 3 — Paper (after Tier 1)
+
+# | # | Task |
+# |---|------|
+# | **8** | Paste industrial results + ablation tables (LaTeX already drafted) |
+# | **9** | Replace every “15 industrial” → **150** |
+# | **10** | Must-do: citations, Related Work subsection, Z3 reword, formatting fixes |
+# | **11** | Honest limitations: trajectory neutral on this industrial set; no external baselines yet |
+
+# ---
+
+# ### Tier 4 — Later (true 9/10)
+
+# - Better physics (OBB / swept volume)
+# - Simple SayCan-style wrapper (graph-only already is one)
+# - Held-out split / multi-seed
+# - Real-robot or higher-fidelity sim
+
+# ---
+
+# ### Recommended immediate next step
+
+# **Persist the notebook wins into the actual package** so results are reproducible outside Kaggle:
+
+# 1. Patch `obstacle_map_industrial.json` → `worker_zone.clearance_m = 0.90`
+# 2. Patch orchestrator / kinematics for `domain` + `max_reach`
+# 3. Fix plan loading to use `adversarial_plan` for unsafe
+# 4. Fix Kuzu `makedirs` (parent only)
+
+# I can give you the exact notebook cells to write these fixes back into `/kaggle/working/cint70/` and produce a downloadable updated zip.
+
+# Should I start with **#1 (persist fixes into package)**?

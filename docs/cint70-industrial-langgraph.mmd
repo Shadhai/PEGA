@@ -1,0 +1,27 @@
+%%{init: {'flowchart': {'curve': 'linear'}}}%%
+graph TD;
+	__start__[__start__]:::startclass;
+	__end__[__end__]:::endclass;
+	node_retrieve([node_retrieve]):::otherclass;
+	node_plan([node_plan]):::otherclass;
+	node_validate([node_validate]):::otherclass;
+	node_approve([node_approve]):::otherclass;
+	node_recover([node_recover]):::otherclass;
+	node_reject([node_reject]):::otherclass;
+	node_flag([node_flag]):::otherclass;
+	node_validate__route_after_validation([node_validate__route_after_validation]):::otherclass;
+	node_approve --> __end__;
+	node_plan --> node_validate;
+	node_reject --> __end__;
+	node_flag --> __end__;
+	node_recover --> node_plan;
+	node_retrieve --> node_plan;
+	node_validate --> node_validate__route_after_validation;
+	node_validate__route_after_validation -- approve --> node_approve;
+	node_validate__route_after_validation -- recover --> node_recover;
+	node_validate__route_after_validation -- reject --> node_reject;
+	node_validate__route_after_validation -- flag --> node_flag;
+	__start__ --> node_retrieve;
+	classDef startclass fill:#ffdfba;
+	classDef endclass fill:#baffc9;
+	classDef otherclass fill:#fad7de;
