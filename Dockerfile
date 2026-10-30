@@ -1,3 +1,4 @@
+
 FROM python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,7 +16,11 @@ COPY src ./src
 COPY webapp ./webapp
 COPY data/extracted ./data/extracted
 COPY data/experience.db ./data/experience.db
+
+# Copy machine learning models
 COPY models/minilm ./models/minilm
+COPY models/qwen2.5-1.5b ./models/qwen2.5-1.5b
+
 COPY logs ./logs
 
 RUN mkdir -p data/graph_db logs/evidence logs/benchmarks

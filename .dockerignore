@@ -13,9 +13,14 @@ __pycache__
 
 # Large local models: minilm is explicitly re-included below because the API
 # loads it during startup. Mount qwen2.5-1.5b at runtime for /api/run.
+
+# Exclude models by default
 models/*
 !models/minilm/
 !models/minilm/**
+!models/qwen2.5-1.5b/
+!models/qwen2.5-1.5b/**
+
 
 # Downloaded and generated data
 mars2020_meda
