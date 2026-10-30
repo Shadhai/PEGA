@@ -32,7 +32,6 @@ secrets.*
 /data/processed/
 /data/graph_db/
 /data/vector_db/
-/data/experience.db
 /webapp/data/
 
 # Runtime logs and generated reports
@@ -46,6 +45,8 @@ secrets.*
 *.db
 *.sqlite
 *.sqlite3
+
+!/data/experience.db
 *.kuzu
 *.hindex.ovf
 *.safetensors
@@ -69,3 +70,5 @@ desktop.ini
 data/graph_db_runtime/data.kz
 
 data/graph_db_runtime/
+
+pega-dashboard-image.tar
