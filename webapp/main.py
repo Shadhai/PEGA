@@ -15,6 +15,9 @@ from src.graph.queries import ConstraintQueries
 from src.memory.experience import ExperienceMemory
 
 app = FastAPI(title="CINT‑70 Dashboard")
+@app.get("/health")
+def health():
+    return {"status": "ok", "project": "CINT-70"}
 
 # Mount static files (from project root, the folder is webapp/static)
 app.mount("/static", StaticFiles(directory="webapp/static"), name="static")
