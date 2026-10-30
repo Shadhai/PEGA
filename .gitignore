@@ -25,6 +25,8 @@ secrets.*
 # Downloaded models and accelerator/offload state
 /models/*
 !/models/.gitkeep
+!/models/minilm/
+!/models/minilm/**
 
 # Downloaded source data and generated processing stores
 /mars2020_meda/
@@ -46,7 +48,7 @@ secrets.*
 *.sqlite
 *.sqlite3
 
-!/data/experience.db
+!/data/experience.dbx
 *.kuzu
 *.hindex.ovf
 *.safetensors
